@@ -218,5 +218,6 @@ model SavedSearch {
   alertChannels Json    @default("[]") @map("alert_channels")
   createdAt     DateTime @default(now()) @map("created_at")
 
+  @@index([userId])
   @@map("saved_searches")
 }

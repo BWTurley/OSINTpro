@@ -7,10 +7,11 @@ const TAG_LENGTH = 16;
 
 function getKey(): Buffer {
   const key = config.ENCRYPTION_KEY;
-  // Ensure key is exactly 32 bytes for AES-256
-  const keyBuffer = Buffer.alloc(32);
-  Buffer.from(key, 'utf8').copy(keyBuffer);
-  return keyBuffer;
+  const keyBytes = Buffer.from(key, 'utf8');
+  if (keyBytes.length < 32) {
+    throw new Error('ENCRYPTION_KEY must be at least 32 bytes');
+  }
+  return keyBytes.subarray(0, 32);
 }
 
 export function encrypt(plaintext: string): string {

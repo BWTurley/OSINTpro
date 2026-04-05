@@ -53,16 +53,7 @@ export const searchResolvers = {
       },
       ctx: GqlContext,
     ) => {
-      return ctx.searchService.search({
-        query: args.input.query,
-        entityTypes: args.input.entityTypes,
-        tlpLevels: args.input.tlpLevels,
-        tags: args.input.tags,
-        dateFrom: args.input.dateFrom,
-        dateTo: args.input.dateTo,
-        page: args.input.page,
-        size: args.input.size,
-      });
+      return searchResolvers.Query.searchEntities(_parent, args, ctx);
     },
 
     suggest: async (
