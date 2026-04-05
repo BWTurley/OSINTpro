@@ -12,7 +12,7 @@ export const SavedSearches: React.FC<SavedSearchesProps> = ({ onRun }) => {
 
   useEffect(() => {
     fetch('/api/search/saved', {
-      headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` },
+      headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` },
     })
       .then((res) => res.json())
       .then((data) => setSavedSearches(Array.isArray(data) ? data : data.items ?? []))

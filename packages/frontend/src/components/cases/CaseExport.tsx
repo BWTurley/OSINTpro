@@ -66,7 +66,7 @@ export const CaseExport: React.FC<CaseExportProps & { caseId?: string }> = ({ is
     try {
       const response = await fetch(`/api/export/case/${caseId}/${format}`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+          Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
         },
       });
       if (!response.ok) throw new Error('Export failed');

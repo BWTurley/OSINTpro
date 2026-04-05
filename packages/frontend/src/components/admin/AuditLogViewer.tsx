@@ -63,7 +63,7 @@ export const AuditLogViewer: React.FC = () => {
 
   useEffect(() => {
     fetch('/api/audit/logs', {
-      headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` },
+      headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` },
     })
       .then((res) => res.json())
       .then((data) => setLogs(Array.isArray(data) ? data : data.logs ?? []))

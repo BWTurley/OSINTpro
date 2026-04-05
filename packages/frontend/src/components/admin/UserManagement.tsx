@@ -19,7 +19,7 @@ export const UserManagement: React.FC = () => {
 
   useEffect(() => {
     fetch('/api/auth/users', {
-      headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` },
+      headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` },
     })
       .then((res) => res.json())
       .then((data) => setUsers(data))

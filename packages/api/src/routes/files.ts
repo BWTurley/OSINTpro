@@ -120,7 +120,10 @@ export function createFileRouter(storageService: StorageService): Router {
     requireAuth,
     async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
       try {
-        const { key } = req.params;
+        const key = req.params.key as string;
+        if (key.includes('..') || !key.startsWith('uploads/')) {
+          throw createAppError('Invalid file path', 403, 'FORBIDDEN');
+        }
         const stat = await storageService.stat(key);
 
         if (!stat) {
@@ -146,7 +149,10 @@ export function createFileRouter(storageService: StorageService): Router {
     requireAuth,
     async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
       try {
-        const { key } = req.params;
+        const key = req.params.key as string;
+        if (key.includes('..') || !key.startsWith('uploads/')) {
+          throw createAppError('Invalid file path', 403, 'FORBIDDEN');
+        }
         await storageService.delete(key);
         res.status(204).send();
       } catch (err) {
@@ -161,8 +167,11 @@ export function createFileRouter(storageService: StorageService): Router {
     requireAuth,
     async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
       try {
-        const { key } = req.params;
-        const expiry = parseInt(req.query.expiry as string, 10) || 3600;
+        const key = req.params.key as string;
+        if (key.includes('..') || !key.startsWith('uploads/')) {
+          throw createAppError('Invalid file path', 403, 'FORBIDDEN');
+        }
+        const expiry = Math.min(Math.max(parseInt(req.query.expiry as string, 10) || 3600, 60), 86400);
         const url = await storageService.getPresignedUrl(key, expiry);
         res.json({ url, expiresIn: expiry });
       } catch (err) {
