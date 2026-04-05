@@ -1,17 +1,35 @@
 import React from 'react';
+import { useQuery } from '@apollo/client';
 import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
+import { SEARCH } from '@/graphql/queries/search';
 import { SEVERITY_COLORS } from '@/utils/constants';
 import type { GeoEvent } from '@/types';
 
-// Demo events -- in production these come from ACLED/GDELT via API
-const demoEvents: GeoEvent[] = [
-  { id: '1', lat: 48.8566, lng: 2.3522, type: 'cyber', title: 'Phishing Campaign', description: 'Large-scale phishing targeting EU banks', source: 'GDELT', date: '2026-04-05', severity: 'high' },
-  { id: '2', lat: 38.9072, lng: -77.0369, type: 'breach', title: 'Data Breach', description: 'Government contractor breach reported', source: 'OSINT', date: '2026-04-04', severity: 'critical' },
-  { id: '3', lat: 35.6762, lng: 139.6503, type: 'malware', title: 'Ransomware Spread', description: 'New variant spreading across APAC', source: 'ACLED', date: '2026-04-03', severity: 'medium' },
-  { id: '4', lat: -33.8688, lng: 151.2093, type: 'ddos', title: 'DDoS Attack', description: 'Infrastructure targeted', source: 'GDELT', date: '2026-04-05', severity: 'low' },
-];
-
 export const GlobalEventMap: React.FC = () => {
+  const { data } = useQuery(SEARCH, {
+    variables: { query: '*', types: ['LOCATION'], limit: 50 },
+  });
+
+  const events: GeoEvent[] = (data?.search?.entities ?? [])
+    .filter((e: Record<string, unknown>) => {
+      const d = e.data as Record<string, unknown> | undefined;
+      return d?.latitude && d?.longitude;
+    })
+    .map((e: Record<string, unknown>) => {
+      const d = e.data as Record<string, unknown>;
+      return {
+        id: e.id as string,
+        lat: d.latitude as number,
+        lng: d.longitude as number,
+        type: 'cyber',
+        title: (d.name ?? e.id) as string,
+        description: '',
+        source: 'OSINT',
+        date: e.createdAt as string,
+        severity: 'medium' as const,
+      };
+    });
+
   return (
     <div className="card space-y-4">
       <h3 className="text-lg font-semibold text-gray-100">Global Events</h3>
@@ -27,7 +45,7 @@ export const GlobalEventMap: React.FC = () => {
             url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
             attribution='&copy; <a href="https://carto.com/">CARTO</a>'
           />
-          {demoEvents.map((event) => (
+          {events.map((event) => (
             <CircleMarker
               key={event.id}
               center={[event.lat, event.lng]}

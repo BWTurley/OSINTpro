@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Database, HardDrive, Cpu, Activity, Server, Layers } from 'lucide-react';
 import { formatFileSize, formatNumber } from '@/utils/formatters';
 import clsx from 'clsx';
@@ -12,24 +12,42 @@ interface HealthMetric {
   status: 'healthy' | 'warning' | 'critical';
 }
 
-// Demo data
-const metrics: HealthMetric[] = [
-  { label: 'PostgreSQL', value: formatFileSize(2.4 * 1024 * 1024 * 1024), max: '50 GB', percentage: 4.8, icon: Database, status: 'healthy' },
-  { label: 'Elasticsearch', value: formatFileSize(8.7 * 1024 * 1024 * 1024), max: '100 GB', percentage: 8.7, icon: HardDrive, status: 'healthy' },
-  { label: 'Redis Memory', value: formatFileSize(512 * 1024 * 1024), max: '2 GB', percentage: 25, icon: Cpu, status: 'healthy' },
-  { label: 'Neo4j', value: formatNumber(145000) + ' nodes', max: '500K', percentage: 29, icon: Layers, status: 'healthy' },
-  { label: 'Queue Depth', value: '23 jobs', max: '1000', percentage: 2.3, icon: Activity, status: 'healthy' },
-  { label: 'API Response', value: '145ms avg', max: '500ms', percentage: 29, icon: Server, status: 'healthy' },
-];
+interface HealthData {
+  status: string;
+  services?: Record<string, { status: string; details?: string }>;
+  uptime?: string;
+  version?: string;
+  [key: string]: unknown;
+}
 
-const systemInfo = [
-  { label: 'Uptime', value: '14 days, 7 hours' },
-  { label: 'Node Version', value: 'v20.11.0' },
-  { label: 'Total Entities', value: formatNumber(145283) },
-  { label: 'Total Cases', value: '47' },
-  { label: 'Active Users', value: '12' },
-  { label: 'Collection Modules', value: '8 / 12 healthy' },
-];
+function buildMetrics(data: HealthData): HealthMetric[] {
+  const services = data.services ?? {};
+  const result: HealthMetric[] = [];
+  const icons: Record<string, React.FC<{ className?: string }>> = {
+    postgres: Database, elasticsearch: HardDrive, redis: Cpu,
+    neo4j: Layers, queue: Activity, api: Server,
+  };
+  for (const [name, svc] of Object.entries(services)) {
+    const status = svc.status === 'healthy' ? 'healthy' : svc.status === 'degraded' ? 'warning' : 'critical';
+    result.push({
+      label: name.charAt(0).toUpperCase() + name.slice(1),
+      value: svc.details ?? svc.status,
+      icon: icons[name] ?? Server,
+      status,
+    });
+  }
+  if (result.length === 0) {
+    result.push({ label: 'API', value: data.status, icon: Server, status: data.status === 'ok' ? 'healthy' : 'warning' });
+  }
+  return result;
+}
+
+function buildSystemInfo(data: HealthData): Array<{ label: string; value: string }> {
+  const info: Array<{ label: string; value: string }> = [];
+  if (data.uptime) info.push({ label: 'Uptime', value: data.uptime });
+  if (data.version) info.push({ label: 'Node Version', value: data.version });
+  return info;
+}
 
 const statusColors = {
   healthy: 'text-green-400',
@@ -44,6 +62,19 @@ const barColors = {
 };
 
 export const SystemHealth: React.FC = () => {
+  const [metrics, setMetrics] = useState<HealthMetric[]>([]);
+  const [systemInfo, setSystemInfo] = useState<Array<{ label: string; value: string }>>([]);
+
+  useEffect(() => {
+    fetch('/health/ready')
+      .then((res) => res.json())
+      .then((data: HealthData) => {
+        setMetrics(buildMetrics(data));
+        setSystemInfo(buildSystemInfo(data));
+      })
+      .catch((err) => console.error('Failed to load health data:', err));
+  }, []);
+
   return (
     <div className="space-y-6">
       {/* System info cards */}

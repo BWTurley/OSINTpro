@@ -29,6 +29,8 @@ services:
     ports: []  # No direct exposure — nginx handles traffic
     environment:
       - NODE_ENV=production
+      - ELASTICSEARCH_USERNAME=${ELASTICSEARCH_USERNAME:-elastic}
+      - ELASTICSEARCH_PASSWORD=${ELASTICSEARCH_PASSWORD:-changeme}
 
   workers:
     restart: always
@@ -42,6 +44,8 @@ services:
           memory: 512M
     environment:
       - NODE_ENV=production
+      - ELASTICSEARCH_USERNAME=${ELASTICSEARCH_USERNAME:-elastic}
+      - ELASTICSEARCH_PASSWORD=${ELASTICSEARCH_PASSWORD:-changeme}
 
   postgres:
     restart: always
@@ -96,6 +100,8 @@ services:
     ports: []  # No external access in production
     environment:
       - ES_JAVA_OPTS=-Xms2g -Xmx2g
+      - xpack.security.enabled=true
+      - ELASTIC_PASSWORD=${ELASTICSEARCH_PASSWORD:-changeme}
 
   neo4j:
     restart: always

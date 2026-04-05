@@ -1,32 +1,35 @@
 import React, { useState } from 'react';
+import { useQuery } from '@apollo/client';
+import { gql } from '@apollo/client';
 import { Clock, Play, Pause, Plus, Trash2 } from 'lucide-react';
 import { Modal } from '@/components/common/Modal';
 import { formatDateTime } from '@/utils/formatters';
 import clsx from 'clsx';
 import type { ScheduledJob } from '@/types';
 
-// Demo data
-const demoScheduled: ScheduledJob[] = [
-  {
-    id: '1', name: 'Daily IOC Sweep', module: 'VirusTotal',
-    cron: '0 6 * * *', enabled: true, lastRun: '2026-04-05T06:00:00Z',
-    nextRun: '2026-04-06T06:00:00Z', entityQuery: 'type:ip AND confidence:>70',
-  },
-  {
-    id: '2', name: 'Hourly Domain Monitor', module: 'PassiveTotal',
-    cron: '0 * * * *', enabled: true, lastRun: '2026-04-05T07:00:00Z',
-    nextRun: '2026-04-05T08:00:00Z', entityQuery: 'type:domain AND tag:monitored',
-  },
-  {
-    id: '3', name: 'Weekly Threat Actor Update', module: 'MITRE',
-    cron: '0 0 * * 1', enabled: false, lastRun: '2026-03-31T00:00:00Z',
-    nextRun: '2026-04-07T00:00:00Z', entityQuery: 'type:threat_actor',
-  },
-];
+const GET_SCHEDULED_JOBS = gql`
+  query GetScheduledJobs {
+    scheduledJobs {
+      id
+      name
+      module
+      cron
+      enabled
+      lastRun
+      nextRun
+      entityQuery
+    }
+  }
+`;
 
 export const ScheduledJobs: React.FC = () => {
-  const [jobs, setJobs] = useState<ScheduledJob[]>(demoScheduled);
+  const { data } = useQuery(GET_SCHEDULED_JOBS);
+  const [jobs, setJobs] = useState<ScheduledJob[]>([]);
   const [showCreate, setShowCreate] = useState(false);
+
+  React.useEffect(() => {
+    if (data?.scheduledJobs) setJobs(data.scheduledJobs);
+  }, [data]);
 
   const toggleJob = (id: string) => {
     setJobs((prev) =>

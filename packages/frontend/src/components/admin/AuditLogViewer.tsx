@@ -1,21 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Download } from 'lucide-react';
 import { DataTable } from '@/components/common/DataTable';
 import { formatDateTime } from '@/utils/formatters';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { AuditLogEntry } from '@/types';
-
-// Demo data
-const demoLogs: AuditLogEntry[] = [
-  { id: '1', userId: 'u1', userName: 'Admin User', action: 'entity.create', entityType: 'ip', entityId: 'e1', details: 'Created entity 192.168.1.1', timestamp: '2026-04-05T08:15:00Z' },
-  { id: '2', userId: 'u2', userName: 'Jane Analyst', action: 'case.update', entityType: 'case', entityId: 'c1', details: 'Updated case status to in_progress', timestamp: '2026-04-05T08:10:00Z' },
-  { id: '3', userId: 'u1', userName: 'Admin User', action: 'collection.trigger', entityType: 'domain', entityId: 'e2', details: 'Triggered VirusTotal for example.com', timestamp: '2026-04-05T08:05:00Z' },
-  { id: '4', userId: 'u2', userName: 'Jane Analyst', action: 'entity.update', entityType: 'person', entityId: 'e3', details: 'Updated confidence to 85%', timestamp: '2026-04-05T07:55:00Z' },
-  { id: '5', userId: 'u1', userName: 'Admin User', action: 'user.create', entityType: 'user', entityId: 'u3', details: 'Created user john@example.com', timestamp: '2026-04-05T07:45:00Z' },
-  { id: '6', userId: 'u2', userName: 'Jane Analyst', action: 'entity.merge', entityType: 'ip', entityId: 'e4', details: 'Merged 3 entities into e4', timestamp: '2026-04-05T07:30:00Z' },
-  { id: '7', userId: 'u1', userName: 'Admin User', action: 'report.generate', entityType: 'report', entityId: 'r1', details: 'Generated Threat Assessment report', timestamp: '2026-04-05T07:20:00Z' },
-  { id: '8', userId: 'u3', userName: 'John Viewer', action: 'search.execute', entityType: '', entityId: '', details: 'Searched for "apt29"', timestamp: '2026-04-05T07:15:00Z' },
-];
 
 const actionColors: Record<string, string> = {
   'entity.create': 'text-green-400',
@@ -71,8 +59,18 @@ const columns: ColumnDef<AuditLogEntry, unknown>[] = [
 
 export const AuditLogViewer: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [logs, setLogs] = useState<AuditLogEntry[]>([]);
 
-  const filteredLogs = demoLogs.filter((log) =>
+  useEffect(() => {
+    fetch('/api/audit/logs', {
+      headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` },
+    })
+      .then((res) => res.json())
+      .then((data) => setLogs(Array.isArray(data) ? data : data.logs ?? []))
+      .catch((err) => console.error('Failed to load audit logs:', err));
+  }, []);
+
+  const filteredLogs = logs.filter((log) =>
     searchQuery === '' ||
     log.details.toLowerCase().includes(searchQuery.toLowerCase()) ||
     log.userName.toLowerCase().includes(searchQuery.toLowerCase()) ||

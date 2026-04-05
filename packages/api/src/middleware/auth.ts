@@ -8,7 +8,7 @@ export interface AuthenticatedRequest extends Request {
 }
 
 export function createAuthMiddleware(authService: AuthService) {
-  return (req: AuthenticatedRequest, _res: Response, next: NextFunction): void => {
+  return async (req: AuthenticatedRequest, _res: Response, next: NextFunction): Promise<void> => {
     const authHeader = req.headers.authorization;
 
     if (!authHeader) {
@@ -25,6 +25,11 @@ export function createAuthMiddleware(authService: AuthService) {
 
     try {
       const payload = authService.verifyAccessToken(token);
+
+      const isRevoked = await authService.isTokenRevoked(token);
+      if (isRevoked) {
+        return next();
+      }
 
       // Attach a lightweight user object. Full user is loaded by resolvers when needed.
       req.user = {

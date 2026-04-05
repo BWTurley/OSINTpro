@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
+import { useQuery } from '@apollo/client';
 import { Globe, Server, Shield, AlertTriangle } from 'lucide-react';
+import { SEARCH } from '@/graphql/queries/search';
 import clsx from 'clsx';
 
 interface AssetNode {
@@ -10,42 +12,6 @@ interface AssetNode {
   children?: AssetNode[];
   details?: string;
 }
-
-// Mock attack surface data
-const mockAssets: AssetNode[] = [
-  {
-    id: '1', label: 'example.com', type: 'domain', status: 'exposed',
-    children: [
-      {
-        id: '1-1', label: 'www.example.com', type: 'subdomain', status: 'secure',
-        children: [
-          { id: '1-1-1', label: '203.0.113.10', type: 'ip', status: 'secure', children: [
-            { id: '1-1-1-1', label: 'HTTPS (443)', type: 'service', status: 'secure', details: 'TLS 1.3, valid cert' },
-            { id: '1-1-1-2', label: 'HTTP (80)', type: 'service', status: 'exposed', details: 'Redirect to HTTPS' },
-          ]},
-        ],
-      },
-      {
-        id: '1-2', label: 'api.example.com', type: 'subdomain', status: 'vulnerable',
-        children: [
-          { id: '1-2-1', label: '203.0.113.20', type: 'ip', status: 'vulnerable', children: [
-            { id: '1-2-1-1', label: 'HTTPS (443)', type: 'service', status: 'vulnerable', details: 'TLS 1.1, CVE-2026-1234' },
-            { id: '1-2-1-2', label: 'SSH (22)', type: 'service', status: 'exposed', details: 'OpenSSH 8.2' },
-          ]},
-        ],
-      },
-      {
-        id: '1-3', label: 'mail.example.com', type: 'subdomain', status: 'secure',
-        children: [
-          { id: '1-3-1', label: '203.0.113.30', type: 'ip', status: 'secure', children: [
-            { id: '1-3-1-1', label: 'SMTP (25)', type: 'service', status: 'secure', details: 'STARTTLS enabled' },
-            { id: '1-3-1-2', label: 'IMAP (993)', type: 'service', status: 'secure', details: 'TLS 1.3' },
-          ]},
-        ],
-      },
-    ],
-  },
-];
 
 const statusColors = {
   secure: { bg: 'bg-green-500/10', border: 'border-green-500/30', text: 'text-green-400', icon: Shield },
@@ -106,6 +72,17 @@ const AssetTreeNode: React.FC<AssetTreeNodeProps> = ({ node, depth }) => {
 };
 
 export const AttackSurface: React.FC = () => {
+  const { data } = useQuery(SEARCH, {
+    variables: { query: '*', types: ['DOMAIN', 'IP_ADDRESS'], limit: 100 },
+  });
+
+  const assets: AssetNode[] = (data?.search?.entities ?? []).map((entity: Record<string, unknown>) => ({
+    id: entity.id as string,
+    label: (entity.value ?? entity.id) as string,
+    type: (entity.type as string) === 'IP_ADDRESS' ? 'ip' as const : 'domain' as const,
+    status: 'secure' as const,
+  }));
+
   // Count assets by status
   const countByStatus = (nodes: AssetNode[]): Record<string, number> => {
     const counts: Record<string, number> = { secure: 0, exposed: 0, vulnerable: 0 };
@@ -119,7 +96,7 @@ export const AttackSurface: React.FC = () => {
     return counts;
   };
 
-  const counts = countByStatus(mockAssets);
+  const counts = countByStatus(assets);
 
   return (
     <div className="space-y-6">
@@ -150,7 +127,7 @@ export const AttackSurface: React.FC = () => {
       <div className="space-y-3">
         <h3 className="text-base font-semibold text-gray-200">Asset Discovery Tree</h3>
         <div className="space-y-2">
-          {mockAssets.map((root) => (
+          {assets.map((root) => (
             <AssetTreeNode key={root.id} node={root} depth={0} />
           ))}
         </div>

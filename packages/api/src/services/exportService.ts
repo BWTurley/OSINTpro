@@ -311,13 +311,59 @@ export class ExportService {
   }
 
   async exportPDF(caseId: string): Promise<Buffer> {
-    // Generate a markdown-based text representation as PDF generation
-    // requires a heavyweight library. In production, use puppeteer or pdfkit.
-    const markdown = await this.exportMarkdown(caseId);
+    const data = await this.loadCaseData(caseId);
+    const PDFDocument = (await import('pdfkit')).default;
 
-    // For now, return the markdown as a UTF-8 buffer.
-    // TODO: Integrate pdfkit or puppeteer for real PDF rendering.
-    logger.warn('PDF export returns markdown as plaintext buffer -- integrate pdfkit for production');
-    return Buffer.from(markdown, 'utf8');
+    return new Promise((resolve, reject) => {
+      const doc = new PDFDocument({ margin: 50 });
+      const chunks: Buffer[] = [];
+
+      doc.on('data', (chunk: Buffer) => chunks.push(chunk));
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
+      doc.on('error', reject);
+
+      // Title
+      doc.fontSize(20).text(data.caseRecord.name, { align: 'center' });
+      doc.moveDown();
+      doc.fontSize(10).text(
+        `Status: ${data.caseRecord.status} | TLP: ${data.caseRecord.tlpLevel} | Exported: ${new Date().toISOString()}`,
+        { align: 'center' },
+      );
+      doc.moveDown(2);
+
+      // Description
+      if (data.caseRecord.description) {
+        doc.fontSize(14).text('Description');
+        doc.moveDown(0.5);
+        doc.fontSize(10).text(data.caseRecord.description);
+        doc.moveDown();
+      }
+
+      // Entities
+      if (data.caseRecord.caseEntities.length > 0) {
+        doc.fontSize(14).text(`Entities (${data.caseRecord.caseEntities.length})`);
+        doc.moveDown(0.5);
+        for (const ce of data.caseRecord.caseEntities) {
+          const entityData = ce.entity.data as Record<string, unknown>;
+          const nameOrValue = String(entityData.name ?? entityData.value ?? ce.entity.id);
+          doc.fontSize(10).text(
+            `- [${ce.entity.entityType}] ${nameOrValue} (confidence: ${ce.entity.confidence ?? 'N/A'})`,
+          );
+        }
+        doc.moveDown();
+      }
+
+      // Notes
+      if (data.caseRecord.notes.length > 0) {
+        doc.fontSize(14).text(`Notes (${data.caseRecord.notes.length})`);
+        doc.moveDown(0.5);
+        for (const note of data.caseRecord.notes) {
+          doc.fontSize(10).text(`[${note.createdAt.toISOString()}] ${note.content}`);
+          doc.moveDown(0.3);
+        }
+      }
+
+      doc.end();
+    });
   }
 }

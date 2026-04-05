@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useQuery } from '@apollo/client';
+import { useQuery, useMutation } from '@apollo/client';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -9,6 +9,7 @@ import {
   MoreHorizontal,
 } from 'lucide-react';
 import { GET_CASE } from '@/graphql/queries/cases';
+import { ADD_ENTITY_TO_CASE } from '@/graphql/mutations/cases';
 import { TLPBadge } from '@/components/common/TLPBadge';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { CaseNotes } from './CaseNotes';
@@ -29,9 +30,11 @@ export const CaseWorkspace: React.FC<CaseWorkspaceProps> = ({ caseId }) => {
   const [activeTab, setActiveTab] = useState<WorkspaceTab>('entities');
   const [showExport, setShowExport] = useState(false);
 
-  const { data, loading, error } = useQuery(GET_CASE, {
+  const { data, loading, error, refetch } = useQuery(GET_CASE, {
     variables: { id: caseId },
   });
+
+  const [addEntityToCase] = useMutation(ADD_ENTITY_TO_CASE);
 
   const caseData = data?.case_ as Case | undefined;
 
@@ -104,8 +107,12 @@ export const CaseWorkspace: React.FC<CaseWorkspaceProps> = ({ caseId }) => {
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => {
-              // TODO: Add entity to case
+            onClick={async () => {
+              const entityId = prompt('Enter entity ID to add:');
+              if (entityId) {
+                await addEntityToCase({ variables: { caseId, entityId } });
+                refetch();
+              }
             }}
             className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white
                        bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
@@ -171,6 +178,7 @@ export const CaseWorkspace: React.FC<CaseWorkspaceProps> = ({ caseId }) => {
         isOpen={showExport}
         onClose={() => setShowExport(false)}
         caseTitle={caseData.title}
+        caseId={caseId}
       />
     </div>
   );

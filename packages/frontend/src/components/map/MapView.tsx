@@ -79,7 +79,21 @@ export const MapView: React.FC = () => {
           activeTool={activeTool}
           onToolChange={setActiveTool}
           onExport={() => {
-            // TODO: Implement map export
+            const container = document.querySelector('.leaflet-container') as HTMLElement;
+            if (!container) return;
+            import('html2canvas').then(({ default: html2canvas }) => {
+              html2canvas(container).then((canvas) => {
+                canvas.toBlob((blob) => {
+                  if (!blob) return;
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `map-export-${Date.now()}.png`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                });
+              });
+            });
           }}
         />
 

@@ -12,6 +12,11 @@ services:
         condition: service_healthy
     environment:
       - VITE_API_URL=http://api:4000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     networks:
       - osint-network
 
@@ -60,6 +65,11 @@ services:
         condition: service_healthy
     env_file:
       - .env
+    healthcheck:
+      test: ["CMD", "node", "-e", "process.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     networks:
       - osint-network
 
@@ -173,6 +183,11 @@ services:
       - api
     volumes:
       - ./infrastructure/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     networks:
       - osint-network
 

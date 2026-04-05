@@ -1,17 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Shield, UserCheck } from 'lucide-react';
 import { Modal } from '@/components/common/Modal';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { formatDateTime } from '@/utils/formatters';
 import clsx from 'clsx';
 import type { User } from '@/types';
-
-// Demo data
-const demoUsers: User[] = [
-  { id: '1', email: 'admin@osint.local', name: 'Admin User', role: 'admin', avatar: null, lastLogin: '2026-04-05T08:00:00Z', createdAt: '2026-01-01T00:00:00Z' },
-  { id: '2', email: 'analyst@osint.local', name: 'Jane Analyst', role: 'analyst', avatar: null, lastLogin: '2026-04-05T07:30:00Z', createdAt: '2026-02-15T00:00:00Z' },
-  { id: '3', email: 'viewer@osint.local', name: 'John Viewer', role: 'viewer', avatar: null, lastLogin: '2026-04-04T16:00:00Z', createdAt: '2026-03-01T00:00:00Z' },
-];
 
 const roleColors: Record<string, string> = {
   admin: 'bg-red-500/20 text-red-400',
@@ -20,9 +13,18 @@ const roleColors: Record<string, string> = {
 };
 
 export const UserManagement: React.FC = () => {
-  const [users] = useState(demoUsers);
+  const [users, setUsers] = useState<User[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch('/api/auth/users', {
+      headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` },
+    })
+      .then((res) => res.json())
+      .then((data) => setUsers(data))
+      .catch((err) => console.error('Failed to load users:', err));
+  }, []);
 
   return (
     <div className="space-y-4">

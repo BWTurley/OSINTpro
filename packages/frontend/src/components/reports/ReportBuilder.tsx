@@ -246,9 +246,15 @@ export const ReportBuilder: React.FC = () => {
           templateName={selectedTemplate?.name ?? 'Custom'}
           tlp={tlp}
           sections={sections}
-          onExport={(format) => {
-            // TODO: Implement export
-            console.log('Export as', format);
+          onExport={() => {
+            const markdown = sections.map((s) => `## ${s.title}\n\n${s.content}`).join('\n\n---\n\n');
+            const blob = new Blob([markdown], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `report-${Date.now()}.md`;
+            a.click();
+            URL.revokeObjectURL(url);
           }}
         />
       )}

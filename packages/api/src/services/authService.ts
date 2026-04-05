@@ -4,6 +4,7 @@ import passport from 'passport';
 import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt';
 import { Strategy as LocalStrategy } from 'passport-local';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
+import IORedis from 'ioredis';
 import { PrismaClient, Role, User } from '@prisma/client';
 import { config } from '../config.js';
 import { logger } from '../utils/logger.js';
@@ -25,7 +26,28 @@ export interface AuthTokens {
 }
 
 export class AuthService {
-  constructor(private prisma: PrismaClient) {}
+  private redis: IORedis;
+
+  constructor(private prisma: PrismaClient) {
+    this.redis = new IORedis(config.REDIS_URL, { maxRetriesPerRequest: null });
+    this.redis.on('error', (err) => {
+      logger.error({ err }, 'AuthService Redis connection error');
+    });
+  }
+
+  async revokeToken(token: string): Promise<void> {
+    const decoded = jwt.decode(token) as { exp?: number } | null;
+    if (!decoded?.exp) return;
+    const ttl = decoded.exp - Math.floor(Date.now() / 1000);
+    if (ttl > 0) {
+      await this.redis.set(`blacklist:${token}`, '1', 'EX', ttl);
+    }
+  }
+
+  async isTokenRevoked(token: string): Promise<boolean> {
+    const result = await this.redis.get(`blacklist:${token}`);
+    return result !== null;
+  }
 
   async hashPassword(password: string): Promise<string> {
     return bcrypt.hash(password, SALT_ROUNDS);

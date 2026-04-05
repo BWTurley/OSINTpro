@@ -42,7 +42,7 @@ const sectionOptions: SectionOption[] = [
   { id: 'raw', label: 'Raw Data', default: false },
 ];
 
-export const CaseExport: React.FC<CaseExportProps> = ({ isOpen, onClose, caseTitle }) => {
+export const CaseExport: React.FC<CaseExportProps & { caseId?: string }> = ({ isOpen, onClose, caseTitle, caseId }) => {
   const [format, setFormat] = useState<ExportFormat>('pdf');
   const [sections, setSections] = useState<Set<string>>(
     new Set(sectionOptions.filter((s) => s.default).map((s) => s.id))
@@ -58,9 +58,28 @@ export const CaseExport: React.FC<CaseExportProps> = ({ isOpen, onClose, caseTit
     setSections(next);
   };
 
-  const handleExport = () => {
-    // TODO: Trigger actual export
-    console.log('Exporting case', caseTitle, { format, sections: Array.from(sections) });
+  const handleExport = async () => {
+    if (!caseId) {
+      onClose();
+      return;
+    }
+    try {
+      const response = await fetch(`/api/export/case/${caseId}/${format}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+        },
+      });
+      if (!response.ok) throw new Error('Export failed');
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `case-${caseId}.${format}`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Export error:', err);
+    }
     onClose();
   };
 

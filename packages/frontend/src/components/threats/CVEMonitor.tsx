@@ -1,19 +1,11 @@
 import React, { useState } from 'react';
+import { useQuery } from '@apollo/client';
 import { Search, ExternalLink, ShieldAlert } from 'lucide-react';
+import { GET_THREAT_FEED } from '@/graphql/queries/search';
 import { SEVERITY_BG_CLASSES } from '@/utils/constants';
 import { formatDate } from '@/utils/formatters';
 import clsx from 'clsx';
 import type { CVEEntry, Severity } from '@/types';
-
-// Mock data -- in production this comes from NVD / CISA KEV feeds
-const mockCVEs: CVEEntry[] = [
-  { id: '1', cveId: 'CVE-2026-1234', description: 'Remote code execution in OpenSSL TLS handshake allowing unauthenticated attackers to execute arbitrary code.', cvssScore: 9.8, severity: 'critical', exploitAvailable: true, cisaKev: true, publishedAt: '2026-04-04T12:00:00Z', updatedAt: '2026-04-05T08:00:00Z' },
-  { id: '2', cveId: 'CVE-2026-5678', description: 'Privilege escalation in Linux kernel io_uring subsystem.', cvssScore: 8.4, severity: 'high', exploitAvailable: true, cisaKev: false, publishedAt: '2026-04-03T10:00:00Z', updatedAt: '2026-04-04T14:00:00Z' },
-  { id: '3', cveId: 'CVE-2026-9012', description: 'SQL injection in WordPress plugin allowing database read access.', cvssScore: 7.5, severity: 'high', exploitAvailable: false, cisaKev: false, publishedAt: '2026-04-02T16:00:00Z', updatedAt: '2026-04-03T09:00:00Z' },
-  { id: '4', cveId: 'CVE-2026-3456', description: 'Cross-site scripting in Apache Struts action forms.', cvssScore: 6.1, severity: 'medium', exploitAvailable: false, cisaKev: false, publishedAt: '2026-04-01T11:00:00Z', updatedAt: '2026-04-02T07:00:00Z' },
-  { id: '5', cveId: 'CVE-2026-7890', description: 'Information disclosure via timing side channel in cryptographic library.', cvssScore: 4.3, severity: 'medium', exploitAvailable: false, cisaKev: false, publishedAt: '2026-03-30T08:00:00Z', updatedAt: '2026-03-31T12:00:00Z' },
-  { id: '6', cveId: 'CVE-2026-2345', description: 'Denial of service via malformed HTTP/2 HEADERS frame.', cvssScore: 3.1, severity: 'low', exploitAvailable: false, cisaKev: false, publishedAt: '2026-03-28T09:00:00Z', updatedAt: '2026-03-29T10:00:00Z' },
-];
 
 const severityFilters: Severity[] = ['critical', 'high', 'medium', 'low'];
 
@@ -28,7 +20,27 @@ export const CVEMonitor: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [severityFilter, setSeverityFilter] = useState<Severity[]>([]);
 
-  const filtered = mockCVEs.filter((cve) => {
+  const { data } = useQuery(GET_THREAT_FEED, {
+    variables: { limit: 50, types: ['VULNERABILITY'] },
+  });
+
+  const cves: CVEEntry[] = (data?.threatFeed ?? []).map((item: Record<string, unknown>) => {
+    const score = (item.threatScore as number) ?? 0;
+    const severity: Severity = score >= 9 ? 'critical' : score >= 7 ? 'high' : score >= 4 ? 'medium' : 'low';
+    return {
+      id: item.id as string,
+      cveId: item.value as string,
+      description: '',
+      cvssScore: score,
+      severity,
+      exploitAvailable: false,
+      cisaKev: false,
+      publishedAt: item.firstSeen as string,
+      updatedAt: item.lastSeen as string,
+    };
+  });
+
+  const filtered = cves.filter((cve) => {
     if (severityFilter.length > 0 && !severityFilter.includes(cve.severity)) return false;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();

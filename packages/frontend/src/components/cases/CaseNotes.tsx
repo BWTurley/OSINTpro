@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
+import { useMutation } from '@apollo/client';
 import { Trash2, Edit3, Clock } from 'lucide-react';
+import { ADD_NOTE } from '@/graphql/mutations/cases';
 import { MarkdownEditor } from '@/components/common/MarkdownEditor';
 import { TLPBadge } from '@/components/common/TLPBadge';
 import { formatDateTime } from '@/utils/formatters';
@@ -18,23 +20,24 @@ export const CaseNotes: React.FC<CaseNotesProps> = ({ caseId, notes }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
 
-  const handleSubmit = () => {
+  const [addNote] = useMutation(ADD_NOTE);
+
+  const handleSubmit = async () => {
     if (!newContent.trim()) return;
-    // TODO: Call mutation to add note
-    console.log('Add note to case', caseId, { content: newContent, tlp: newTlp });
+    await addNote({ variables: { caseId, input: { content: newContent, tlp: newTlp } } });
     setNewContent('');
   };
 
   const handleSaveEdit = (noteId: string) => {
     if (!editContent.trim()) return;
-    // TODO: Call mutation to update note
+    // TODO: backend mutation needed for updateNote
     console.log('Update note', noteId, editContent);
     setEditingId(null);
     setEditContent('');
   };
 
   const handleDelete = (noteId: string) => {
-    // TODO: Call mutation to delete note
+    // TODO: backend mutation needed for deleteNote
     console.log('Delete note', noteId);
   };
 

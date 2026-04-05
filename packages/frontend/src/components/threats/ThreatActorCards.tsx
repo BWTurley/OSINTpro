@@ -1,60 +1,10 @@
 import React, { useState } from 'react';
+import { useQuery } from '@apollo/client';
 import { Skull, Globe, Target, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
+import { GET_THREAT_FEED } from '@/graphql/queries/search';
 import { formatDate } from '@/utils/formatters';
 import clsx from 'clsx';
 import type { ThreatActor } from '@/types';
-
-// Demo data -- in production these come from the API
-const demoActors: ThreatActor[] = [
-  {
-    id: '1',
-    name: 'APT29 (Cozy Bear)',
-    aliases: ['Cozy Bear', 'The Dukes', 'YTTRIUM', 'Iron Hemlock'],
-    motivation: 'Espionage',
-    sophistication: 'Expert',
-    country: 'Russia',
-    ttps: ['T1566', 'T1071', 'T1059', 'T1027', 'T1055'],
-    description: 'Russian state-sponsored group attributed to SVR, targeting government and diplomatic organizations.',
-    firstSeen: '2008-01-01',
-    lastSeen: '2026-03-15',
-  },
-  {
-    id: '2',
-    name: 'Lazarus Group',
-    aliases: ['Hidden Cobra', 'ZINC', 'Guardians of Peace'],
-    motivation: 'Financial, Espionage',
-    sophistication: 'Expert',
-    country: 'North Korea',
-    ttps: ['T1190', 'T1486', 'T1059', 'T1003'],
-    description: 'North Korean state-sponsored group known for both espionage and financially motivated attacks.',
-    firstSeen: '2009-01-01',
-    lastSeen: '2026-04-01',
-  },
-  {
-    id: '3',
-    name: 'FIN7',
-    aliases: ['Carbanak', 'Navigator Group', 'GOLD NIAGARA'],
-    motivation: 'Financial',
-    sophistication: 'Advanced',
-    country: 'Russia',
-    ttps: ['T1566', 'T1059', 'T1047', 'T1005'],
-    description: 'Financially motivated threat group targeting retail, restaurant, and hospitality sectors.',
-    firstSeen: '2013-01-01',
-    lastSeen: '2026-02-28',
-  },
-  {
-    id: '4',
-    name: 'Sandworm',
-    aliases: ['Voodoo Bear', 'IRIDIUM', 'ELECTRUM', 'Telebots'],
-    motivation: 'Sabotage, Espionage',
-    sophistication: 'Expert',
-    country: 'Russia',
-    ttps: ['T1190', 'T1486', 'T1059', 'T1071'],
-    description: 'Russian GRU-linked group known for destructive attacks against Ukraine and critical infrastructure worldwide.',
-    firstSeen: '2009-01-01',
-    lastSeen: '2026-03-30',
-  },
-];
 
 const sophColors: Record<string, string> = {
   Expert: 'bg-red-500/20 text-red-400',
@@ -65,6 +15,22 @@ const sophColors: Record<string, string> = {
 
 export const ThreatActorCards: React.FC = () => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const { data } = useQuery(GET_THREAT_FEED, {
+    variables: { limit: 20, types: ['THREAT_ACTOR'] },
+  });
+
+  const actors: ThreatActor[] = (data?.threatFeed ?? []).map((item: Record<string, unknown>) => ({
+    id: item.id as string,
+    name: item.value as string,
+    aliases: (item.tags as string[]) ?? [],
+    motivation: 'Unknown',
+    sophistication: 'Unknown',
+    country: 'Unknown',
+    ttps: [],
+    description: '',
+    firstSeen: item.firstSeen as string,
+    lastSeen: item.lastSeen as string,
+  }));
 
   return (
     <div className="space-y-4">
@@ -74,7 +40,7 @@ export const ThreatActorCards: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {demoActors.map((actor) => {
+        {actors.map((actor) => {
           const isExpanded = expandedId === actor.id;
           return (
             <div
