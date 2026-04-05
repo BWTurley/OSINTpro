@@ -1,13 +1,10 @@
 import { Queue } from 'bullmq';
-import { Redis } from 'ioredis';
+import { randomUUID } from 'node:crypto';
 import type { CollectionJob } from '../base/types.js';
-
-const connection = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
-  maxRetriesPerRequest: null,
-});
+import { queueConnection } from './connection.js';
 
 export const collectionQueue = new Queue<CollectionJob>('collection', {
-  connection,
+  connection: queueConnection,
   defaultJobOptions: {
     attempts: 3,
     backoff: { type: 'exponential', delay: 5000 },
@@ -22,7 +19,7 @@ export async function addCollectionJob(
 ): Promise<string> {
   const added = await collectionQueue.add(job.module, job, {
     priority: priority ?? job.priority,
-    jobId: `${job.module}:${job.entity}:${Date.now()}`,
+    jobId: `${job.module}:${job.entity}:${randomUUID()}`,
   });
   return added.id || '';
 }
@@ -35,7 +32,7 @@ export async function addBulkCollectionJobs(
     data: job,
     opts: {
       priority: job.priority,
-      jobId: `${job.module}:${job.entity}:${Date.now()}`,
+      jobId: `${job.module}:${job.entity}:${randomUUID()}`,
     },
   }));
   const results = await collectionQueue.addBulk(bulkJobs);

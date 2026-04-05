@@ -27,6 +27,24 @@ export interface PathSegment {
   length: number;
 }
 
+const VALID_LABELS = new Set([
+  'Person', 'Organization', 'Location', 'Domain', 'IpAddress', 'EmailAddress',
+  'PhoneNumber', 'Username', 'FinancialAccount', 'Vehicle', 'Indicator',
+  'ThreatActor', 'Campaign', 'Vulnerability', 'Document', 'Event',
+  'Hash', 'Url', 'Wallet', 'Vessel', 'Aircraft', 'Satellite',
+  'Malware', 'Filing', 'Legislation', 'Contract', 'Certificate', 'Country',
+]);
+
+function toNodeLabel(label: string): string {
+  // Convert entity types like "ip-address" to "IpAddress"
+  const pascal = label
+    .split(/[-_\s]+/)
+    .map((s) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase())
+    .join('');
+  if (VALID_LABELS.has(pascal)) return pascal;
+  return 'Entity'; // fallback — never inject unvalidated labels into Cypher
+}
+
 export class GraphService {
   private driver: Driver;
 
@@ -57,7 +75,7 @@ export class GraphService {
   async createNode(id: string, label: string, properties: Record<string, unknown>): Promise<GraphNode> {
     const session = this.getSession();
     try {
-      const safeLabel = label.replace(/[^a-zA-Z0-9_]/g, '_');
+      const safeLabel = toNodeLabel(label);
       const result = await session.run(
         `CREATE (n:Entity:${safeLabel} {id: $id}) SET n += $props RETURN n`,
         { id, props: this.sanitizeProperties(properties) },
@@ -102,7 +120,7 @@ export class GraphService {
     relationshipId: string,
   ): Promise<GraphEdge> {
     const session = this.getSession();
-    const safeType = type.replace(/[^a-zA-Z0-9_]/g, '_').toUpperCase();
+    const safeType = type.replace(/[^a-zA-Z0-9_]/g, '_').toUpperCase().slice(0, 50);
     try {
       const result = await session.run(
         `MATCH (a:Entity {id: $sourceId}), (b:Entity {id: $targetId})

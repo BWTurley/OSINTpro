@@ -12,8 +12,6 @@ export interface AuditEntry {
 }
 
 export class AuditService {
-  private lastHash: string | null = null;
-
   constructor(private prisma: PrismaClient) {}
 
   private computeHash(entry: AuditEntry, previousHash: string | null): string {
@@ -26,19 +24,19 @@ export class AuditService {
   }
 
   async initialize(): Promise<void> {
-    // Load the most recent audit log entry to get the last hash
-    const latest = await this.prisma.auditLog.findFirst({
-      orderBy: { timestamp: 'desc' },
-      select: { previousHash: true },
-    });
-    this.lastHash = latest?.previousHash ?? null;
-    logger.info('Audit service initialized with hash chain');
+    logger.info('Audit service initialized');
   }
 
   async log(entry: AuditEntry): Promise<void> {
-    const currentHash = this.computeHash(entry, this.lastHash);
-
     try {
+      // Query the latest hash per-request to avoid race conditions under concurrency
+      const latest = await this.prisma.auditLog.findFirst({
+        orderBy: { timestamp: 'desc' },
+        select: { previousHash: true },
+      });
+      const lastHash = latest?.previousHash ?? null;
+      const currentHash = this.computeHash(entry, lastHash);
+
       await this.prisma.auditLog.create({
         data: {
           userId: entry.userId,
@@ -50,8 +48,6 @@ export class AuditService {
           previousHash: currentHash,
         },
       });
-
-      this.lastHash = currentHash;
     } catch (err) {
       logger.error({ err, entry }, 'Failed to write audit log');
       // Do not throw -- audit logging should not break the request

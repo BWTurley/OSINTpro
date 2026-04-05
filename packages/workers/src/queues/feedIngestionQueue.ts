@@ -1,13 +1,9 @@
 import { Queue } from 'bullmq';
-import { Redis } from 'ioredis';
 import type { FeedIngestionJob } from '../base/types.js';
-
-const connection = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
-  maxRetriesPerRequest: null,
-});
+import { queueConnection } from './connection.js';
 
 export const feedIngestionQueue = new Queue<FeedIngestionJob>('feed-ingestion', {
-  connection,
+  connection: queueConnection,
   defaultJobOptions: {
     attempts: 3,
     backoff: { type: 'exponential', delay: 15000 },

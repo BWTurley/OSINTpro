@@ -72,7 +72,7 @@ export class PhoneIntelModule extends BaseModule {
       if (!isAbstract) {
         try {
           const result = await this.makeRequest<NumVerifyResult>({
-            url: 'http://apilayer.net/api/validate',
+            url: 'https://apilayer.net/api/validate',
             method: 'GET',
             params: { access_key: actualKey, number: phone, format: 1 },
           });

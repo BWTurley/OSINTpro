@@ -10,14 +10,44 @@ interface SavedSearchesProps {
 export const SavedSearches: React.FC<SavedSearchesProps> = ({ onRun }) => {
   const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([]);
 
-  useEffect(() => {
+  const loadSearches = () => {
     fetch('/api/search/saved', {
       headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` },
     })
       .then((res) => res.json())
       .then((data) => setSavedSearches(Array.isArray(data) ? data : data.items ?? []))
       .catch((err) => console.error('Failed to load saved searches:', err));
-  }, []);
+  };
+
+  useEffect(() => { loadSearches(); }, []);
+
+  const handleToggleAlert = async (search: SavedSearch) => {
+    try {
+      await fetch(`/api/search/saved/${search.id}`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ alertEnabled: !search.alertEnabled }),
+      });
+      loadSearches();
+    } catch (err) {
+      console.error('Failed to toggle alert:', err);
+    }
+  };
+
+  const handleDelete = async (searchId: string) => {
+    try {
+      await fetch(`/api/search/saved/${searchId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` },
+      });
+      loadSearches();
+    } catch (err) {
+      console.error('Failed to delete search:', err);
+    }
+  };
 
   return (
     <div className="space-y-3">
@@ -43,6 +73,7 @@ export const SavedSearches: React.FC<SavedSearchesProps> = ({ onRun }) => {
               </span>
 
               <button
+                onClick={() => handleToggleAlert(saved)}
                 className="p-1.5 text-gray-500 hover:text-gray-300 transition-colors"
                 title={saved.alertEnabled ? 'Disable alerts' : 'Enable alerts'}
               >
@@ -62,6 +93,7 @@ export const SavedSearches: React.FC<SavedSearchesProps> = ({ onRun }) => {
               </button>
 
               <button
+                onClick={() => handleDelete(saved.id)}
                 className="p-1.5 text-gray-500 hover:text-red-400 transition-colors"
                 title="Delete"
               >

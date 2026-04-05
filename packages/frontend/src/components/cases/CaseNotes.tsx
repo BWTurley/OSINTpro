@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useMutation } from '@apollo/client';
 import { Trash2, Edit3, Clock } from 'lucide-react';
-import { ADD_NOTE } from '@/graphql/mutations/cases';
+import { ADD_NOTE, UPDATE_NOTE, DELETE_NOTE } from '@/graphql/mutations/cases';
 import { MarkdownEditor } from '@/components/common/MarkdownEditor';
 import { TLPBadge } from '@/components/common/TLPBadge';
 import { formatDateTime } from '@/utils/formatters';
@@ -21,6 +21,8 @@ export const CaseNotes: React.FC<CaseNotesProps> = ({ caseId, notes }) => {
   const [editContent, setEditContent] = useState('');
 
   const [addNote] = useMutation(ADD_NOTE);
+  const [updateNote] = useMutation(UPDATE_NOTE);
+  const [deleteNote] = useMutation(DELETE_NOTE);
 
   const handleSubmit = async () => {
     if (!newContent.trim()) return;
@@ -28,17 +30,15 @@ export const CaseNotes: React.FC<CaseNotesProps> = ({ caseId, notes }) => {
     setNewContent('');
   };
 
-  const handleSaveEdit = (noteId: string) => {
+  const handleSaveEdit = async (noteId: string) => {
     if (!editContent.trim()) return;
-    // TODO: backend mutation needed for updateNote
-    console.log('Update note', noteId, editContent);
+    await updateNote({ variables: { id: noteId, input: { content: editContent } } });
     setEditingId(null);
     setEditContent('');
   };
 
-  const handleDelete = (noteId: string) => {
-    // TODO: backend mutation needed for deleteNote
-    console.log('Delete note', noteId);
+  const handleDelete = async (noteId: string) => {
+    await deleteNote({ variables: { id: noteId } });
   };
 
   return (

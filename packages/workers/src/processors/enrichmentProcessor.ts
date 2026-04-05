@@ -1,5 +1,6 @@
 import { Worker, Job } from 'bullmq';
 import { Redis } from 'ioredis';
+import { randomUUID } from 'node:crypto';
 import pino from 'pino';
 import type { EnrichmentJob, CollectionJob } from '../base/types.js';
 import type { BaseModule } from '../base/BaseModule.js';
@@ -22,6 +23,21 @@ const ENTITY_TYPE_MODULE_MAP: Record<string, string[]> = {
   vulnerability: ['nvd', 'cisa-kev'],
 };
 
+// The API layer (shared types) uses hyphenated names like "ip-address", "email-address",
+// "phone-number" while workers use short names. Normalize incoming entity types.
+const ENTITY_TYPE_ALIASES: Record<string, string> = {
+  'ip-address': 'ip',
+  'email-address': 'email',
+  'phone-number': 'phone',
+  'threat-actor': 'organization',
+  'financial-account': 'wallet',
+  'indicator': 'hash',
+};
+
+function normalizeEntityType(entityType: string): string {
+  return ENTITY_TYPE_ALIASES[entityType] ?? entityType;
+}
+
 export function createEnrichmentWorker(
   connection: Redis,
   moduleRegistry: Map<string, BaseModule>,
@@ -30,9 +46,10 @@ export function createEnrichmentWorker(
   const worker = new Worker<EnrichmentJob>(
     'enrichment',
     async (job: Job<EnrichmentJob>) => {
-      const { entity, entityType, investigationId, userId, excludeModules, depth, maxDepth } = job.data;
+      const { entity, entityType: rawEntityType, investigationId, userId, excludeModules, depth, maxDepth } = job.data;
+      const entityType = normalizeEntityType(rawEntityType);
 
-      logger.info({ jobId: job.id, entity, entityType, depth, maxDepth }, 'Processing enrichment job');
+      logger.info({ jobId: job.id, entity, entityType, rawEntityType, depth, maxDepth }, 'Processing enrichment job');
 
       if (depth >= maxDepth) {
         logger.info({ entity, depth, maxDepth }, 'Max enrichment depth reached');
@@ -51,7 +68,7 @@ export function createEnrichmentWorker(
       }
 
       const collectionJobs: CollectionJob[] = filteredModules.map((moduleName) => ({
-        id: `enrich-${moduleName}-${entity}-${Date.now()}`,
+        id: `enrich-${moduleName}-${entity}-${randomUUID()}`,
         module: moduleName,
         entity,
         entityType,
@@ -65,7 +82,7 @@ export function createEnrichmentWorker(
         data: cj,
         opts: {
           priority: cj.priority,
-          jobId: `enrich:${cj.module}:${entity}:${Date.now()}`,
+          jobId: `enrich:${cj.module}:${entity}:${randomUUID()}`,
         },
       }));
 

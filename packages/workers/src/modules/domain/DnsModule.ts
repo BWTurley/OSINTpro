@@ -1,6 +1,6 @@
 import { Redis } from 'ioredis';
-import { promises as dns } from 'node:dns';
 import { Resolver } from 'node:dns/promises';
+import pino from 'pino';
 import { BaseModule } from '../../base/BaseModule.js';
 import { Normalizer } from '../../base/Normalizer.js';
 import type {
@@ -22,6 +22,8 @@ interface DnsRecordSet {
   SOA: { nsname: string; hostmaster: string; serial: number; refresh: number; retry: number; expire: number; minttl: number } | null;
   PTR: string[];
 }
+
+const logger = pino({ name: 'dns-module' });
 
 export class DnsModule extends BaseModule {
   name = 'dns';
@@ -106,43 +108,43 @@ export class DnsModule extends BaseModule {
         try {
           records.A = await this.resolver.resolve4(entity);
           apiCalls++;
-        } catch { /* no A records */ }
+        } catch (err) { logger.debug({ entity, err }, 'No A records'); }
 
         // AAAA records
         try {
           records.AAAA = await this.resolver.resolve6(entity);
           apiCalls++;
-        } catch { /* no AAAA records */ }
+        } catch (err) { logger.debug({ entity, err }, 'No AAAA records'); }
 
         // CNAME
         try {
           records.CNAME = await this.resolver.resolveCname(entity);
           apiCalls++;
-        } catch { /* no CNAME */ }
+        } catch (err) { logger.debug({ entity, err }, 'No CNAME records'); }
 
         // MX
         try {
           records.MX = await this.resolver.resolveMx(entity);
           apiCalls++;
-        } catch { /* no MX records */ }
+        } catch (err) { logger.debug({ entity, err }, 'No MX records'); }
 
         // TXT
         try {
           records.TXT = await this.resolver.resolveTxt(entity);
           apiCalls++;
-        } catch { /* no TXT records */ }
+        } catch (err) { logger.debug({ entity, err }, 'No TXT records'); }
 
         // NS
         try {
           records.NS = await this.resolver.resolveNs(entity);
           apiCalls++;
-        } catch { /* no NS records */ }
+        } catch (err) { logger.debug({ entity, err }, 'No NS records'); }
 
         // SOA
         try {
           records.SOA = await this.resolver.resolveSoa(entity);
           apiCalls++;
-        } catch { /* no SOA */ }
+        } catch (err) { logger.debug({ entity, err }, 'No SOA record'); }
 
         rawData['records'] = records;
 

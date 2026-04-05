@@ -1,13 +1,13 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import passport from 'passport';
 import { Redis as IORedis } from 'ioredis';
+import { Role, User } from '@prisma/client';
 import { AuthService } from '../services/authService.js';
 import { AuditService } from '../services/auditService.js';
 import { loginSchema, registerSchema } from '../utils/validation.js';
 import { createAppError } from '../middleware/errorHandler.js';
-import { requireAuth } from '../middleware/rbac.js';
+import { requireAuth, requireRole } from '../middleware/rbac.js';
 import { config } from '../config.js';
-import { User } from '@prisma/client';
 import type { AuthenticatedRequest } from '../middleware/auth.js';
 
 const redis = new IORedis(config.REDIS_URL, { maxRetriesPerRequest: null });
@@ -148,6 +148,55 @@ export function createAuthRouter(authService: AuthService, auditService: AuditSe
     }
     res.json({ message: 'Logged out' });
   });
+
+  // GET /auth/users — list all users (admin only)
+  router.get(
+    '/users',
+    requireRole(Role.ADMIN),
+    async (_req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+      try {
+        const users = await authService.listUsers();
+        res.json(users);
+      } catch (err) {
+        next(err);
+      }
+    },
+  );
+
+  // PATCH /auth/users/:id/role — update user role (admin only)
+  router.patch(
+    '/users/:id/role',
+    requireRole(Role.ADMIN),
+    async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+      try {
+        const { role } = req.body as { role?: string };
+        if (!role || !Object.values(Role).includes(role as Role)) {
+          throw createAppError('Invalid role', 400, 'INVALID_ROLE');
+        }
+        const user = await authService.updateUserRole(req.params.id as string, role as Role);
+        res.json({ id: user.id, email: user.email, name: user.name, role: user.role });
+      } catch (err) {
+        next(err);
+      }
+    },
+  );
+
+  // DELETE /auth/users/:id — delete user (admin only)
+  router.delete(
+    '/users/:id',
+    requireRole(Role.ADMIN),
+    async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+      try {
+        if (req.user?.id === req.params.id) {
+          throw createAppError('Cannot delete yourself', 400, 'SELF_DELETE');
+        }
+        await authService.deleteUser(req.params.id as string);
+        res.status(204).send();
+      } catch (err) {
+        next(err);
+      }
+    },
+  );
 
   return router;
 }

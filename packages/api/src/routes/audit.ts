@@ -24,15 +24,30 @@ export function createAuditRouter(auditService: AuditService): Router {
           size,
         } = req.query;
 
+        const parsedPage = page ? Math.max(0, parseInt(page as string, 10) || 0) : undefined;
+        const parsedSize = size ? Math.min(200, Math.max(1, parseInt(size as string, 10) || 50)) : undefined;
+        const fromDate = from ? new Date(from as string) : undefined;
+        const toDate = to ? new Date(to as string) : undefined;
+
+        // Reject invalid dates
+        if (fromDate && isNaN(fromDate.getTime())) {
+          res.status(400).json({ error: 'Invalid "from" date' });
+          return;
+        }
+        if (toDate && isNaN(toDate.getTime())) {
+          res.status(400).json({ error: 'Invalid "to" date' });
+          return;
+        }
+
         const result = await auditService.search({
           userId: userId as string | undefined,
           action: action as string | undefined,
           entityType: entityType as string | undefined,
           entityId: entityId as string | undefined,
-          from: from ? new Date(from as string) : undefined,
-          to: to ? new Date(to as string) : undefined,
-          page: page ? parseInt(page as string, 10) : undefined,
-          size: size ? parseInt(size as string, 10) : undefined,
+          from: fromDate,
+          to: toDate,
+          page: parsedPage,
+          size: parsedSize,
         });
 
         res.json(result);

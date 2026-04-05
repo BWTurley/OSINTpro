@@ -168,6 +168,23 @@ export class AuthService {
     return user;
   }
 
+  async listUsers(): Promise<User[]> {
+    return this.prisma.user.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async updateUserRole(userId: string, role: Role): Promise<User> {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { role },
+    });
+  }
+
+  async deleteUser(userId: string): Promise<void> {
+    await this.prisma.user.delete({ where: { id: userId } });
+  }
+
   checkRole(userRole: Role, requiredRoles: Role[]): boolean {
     return requiredRoles.includes(userRole);
   }

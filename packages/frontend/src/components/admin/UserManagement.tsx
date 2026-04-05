@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Shield, UserCheck } from 'lucide-react';
+import { Plus, Trash2, UserCheck } from 'lucide-react';
 import { Modal } from '@/components/common/Modal';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { formatDateTime } from '@/utils/formatters';
@@ -12,19 +12,72 @@ const roleColors: Record<string, string> = {
   viewer: 'bg-gray-500/20 text-gray-400',
 };
 
+const authHeaders = () => ({
+  Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
+  'Content-Type': 'application/json',
+});
+
 export const UserManagement: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [newName, setNewName] = useState('');
+  const [newEmail, setNewEmail] = useState('');
+  const [newRole, setNewRole] = useState('VIEWER');
 
-  useEffect(() => {
-    fetch('/api/auth/users', {
-      headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` },
-    })
+  const loadUsers = () => {
+    fetch('/api/auth/users', { headers: authHeaders() })
       .then((res) => res.json())
       .then((data) => setUsers(data))
       .catch((err) => console.error('Failed to load users:', err));
-  }, []);
+  };
+
+  useEffect(() => { loadUsers(); }, []);
+
+  const handleCreateUser = async () => {
+    if (!newName.trim() || !newEmail.trim()) return;
+    try {
+      await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ name: newName, email: newEmail, password: 'changeme123!' }),
+      });
+      setShowCreate(false);
+      setNewName('');
+      setNewEmail('');
+      setNewRole('VIEWER');
+      loadUsers();
+    } catch (err) {
+      console.error('Failed to create user:', err);
+    }
+  };
+
+  const handleUpdateRole = async (userId: string, role: string) => {
+    try {
+      await fetch(`/api/auth/users/${userId}/role`, {
+        method: 'PATCH',
+        headers: authHeaders(),
+        body: JSON.stringify({ role }),
+      });
+      loadUsers();
+    } catch (err) {
+      console.error('Failed to update role:', err);
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!deleteTarget) return;
+    try {
+      await fetch(`/api/auth/users/${deleteTarget}`, {
+        method: 'DELETE',
+        headers: authHeaders(),
+      });
+      setDeleteTarget(null);
+      loadUsers();
+    } catch (err) {
+      console.error('Failed to delete user:', err);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -74,12 +127,15 @@ export const UserManagement: React.FC = () => {
                 <td className="px-4 py-3 text-sm text-gray-500">{formatDateTime(user.createdAt)}</td>
                 <td className="px-4 py-3">
                   <div className="flex items-center justify-end gap-1">
-                    <button className="p-2 text-gray-400 hover:text-gray-200 hover:bg-surface-700 rounded-lg transition-colors">
-                      <Shield className="h-4 w-4" />
-                    </button>
-                    <button className="p-2 text-gray-400 hover:text-gray-200 hover:bg-surface-700 rounded-lg transition-colors">
-                      <Edit2 className="h-4 w-4" />
-                    </button>
+                    <select
+                      value={user.role}
+                      onChange={(e) => handleUpdateRole(user.id, e.target.value)}
+                      className="px-2 py-1 text-sm bg-surface-800 border border-gray-700 rounded-lg text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="VIEWER">Viewer</option>
+                      <option value="ANALYST">Analyst</option>
+                      <option value="ADMIN">Admin</option>
+                    </select>
                     <button
                       onClick={() => setDeleteTarget(user.id)}
                       className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
@@ -99,23 +155,23 @@ export const UserManagement: React.FC = () => {
         <div className="space-y-5">
           <div className="space-y-2">
             <label className="block text-base font-medium text-gray-300">Name</label>
-            <input type="text" placeholder="Full name" className="w-full px-4 py-3 text-base bg-surface-800 border border-gray-700 rounded-lg text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Full name" className="w-full px-4 py-3 text-base bg-surface-800 border border-gray-700 rounded-lg text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
           <div className="space-y-2">
             <label className="block text-base font-medium text-gray-300">Email</label>
-            <input type="email" placeholder="user@example.com" className="w-full px-4 py-3 text-base bg-surface-800 border border-gray-700 rounded-lg text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="user@example.com" className="w-full px-4 py-3 text-base bg-surface-800 border border-gray-700 rounded-lg text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
           <div className="space-y-2">
             <label className="block text-base font-medium text-gray-300">Role</label>
-            <select className="w-full px-4 py-3 text-base bg-surface-800 border border-gray-700 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option value="viewer">Viewer</option>
-              <option value="analyst">Analyst</option>
-              <option value="admin">Admin</option>
+            <select value={newRole} onChange={(e) => setNewRole(e.target.value)} className="w-full px-4 py-3 text-base bg-surface-800 border border-gray-700 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="VIEWER">Viewer</option>
+              <option value="ANALYST">Analyst</option>
+              <option value="ADMIN">Admin</option>
             </select>
           </div>
           <div className="flex justify-end gap-3">
             <button onClick={() => setShowCreate(false)} className="px-4 py-2 text-base text-gray-300 bg-surface-800 hover:bg-surface-700 rounded-lg transition-colors">Cancel</button>
-            <button className="px-4 py-2 text-base font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">Add User</button>
+            <button onClick={handleCreateUser} className="px-4 py-2 text-base font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">Add User</button>
           </div>
         </div>
       </Modal>
@@ -123,7 +179,7 @@ export const UserManagement: React.FC = () => {
       <ConfirmDialog
         isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
-        onConfirm={() => setDeleteTarget(null)}
+        onConfirm={handleDeleteUser}
         title="Delete User"
         message="Are you sure you want to delete this user? This action cannot be undone."
         confirmLabel="Delete"

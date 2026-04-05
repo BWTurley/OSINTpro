@@ -1,13 +1,9 @@
 import { Queue } from 'bullmq';
-import { Redis } from 'ioredis';
 import type { AlertJob } from '../base/types.js';
-
-const connection = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
-  maxRetriesPerRequest: null,
-});
+import { queueConnection } from './connection.js';
 
 export const scheduledQueue = new Queue<AlertJob>('scheduled', {
-  connection,
+  connection: queueConnection,
   defaultJobOptions: {
     attempts: 2,
     backoff: { type: 'exponential', delay: 30000 },

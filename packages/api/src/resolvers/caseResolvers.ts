@@ -196,6 +196,48 @@ export const caseResolvers = {
 
       return note;
     },
+
+    updateNote: async (
+      _parent: unknown,
+      args: { id: string; input: { content: string; classification?: string } },
+      ctx: GqlContext,
+    ) => {
+      assertMinimumRole(ctx.user?.role as 'ADMIN' | 'ANALYST' | 'VIEWER' | 'API_USER' | undefined, 'ANALYST');
+      if (!ctx.user) throw new Error('Authentication required');
+
+      const existing = await ctx.prisma.note.findUnique({ where: { id: args.id } });
+      if (!existing) throw new Error('Note not found');
+      if (existing.authorId !== ctx.user.id && ctx.user.role !== 'ADMIN') {
+        throw new Error('You can only edit your own notes');
+      }
+
+      return ctx.prisma.note.update({
+        where: { id: args.id },
+        data: {
+          content: args.input.content,
+          classification: args.input.classification,
+        },
+        include: { author: true },
+      });
+    },
+
+    deleteNote: async (
+      _parent: unknown,
+      args: { id: string },
+      ctx: GqlContext,
+    ) => {
+      assertMinimumRole(ctx.user?.role as 'ADMIN' | 'ANALYST' | 'VIEWER' | 'API_USER' | undefined, 'ANALYST');
+      if (!ctx.user) throw new Error('Authentication required');
+
+      const existing = await ctx.prisma.note.findUnique({ where: { id: args.id } });
+      if (!existing) throw new Error('Note not found');
+      if (existing.authorId !== ctx.user.id && ctx.user.role !== 'ADMIN') {
+        throw new Error('You can only delete your own notes');
+      }
+
+      await ctx.prisma.note.delete({ where: { id: args.id } });
+      return true;
+    },
   },
 
   Case: {

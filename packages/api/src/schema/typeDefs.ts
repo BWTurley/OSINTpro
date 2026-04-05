@@ -358,6 +358,11 @@ export const typeDefs = `#graphql
     classification: String
   }
 
+  input UpdateNoteInput {
+    content: String!
+    classification: String
+  }
+
   input SearchInput {
     query: String!
     entityTypes: [EntityType!]
@@ -478,6 +483,8 @@ export const typeDefs = `#graphql
 
     # Notes
     addNote(input: CreateNoteInput!): Note!
+    updateNote(id: ID!, input: UpdateNoteInput!): Note!
+    deleteNote(id: ID!): Boolean!
 
     # Admin
     updateModuleConfig(input: ModuleConfigInput!): ApiKeyConfig!

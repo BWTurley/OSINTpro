@@ -1,13 +1,10 @@
 import { Queue } from 'bullmq';
-import { Redis } from 'ioredis';
+import { randomUUID } from 'node:crypto';
 import type { EnrichmentJob } from '../base/types.js';
-
-const connection = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
-  maxRetriesPerRequest: null,
-});
+import { queueConnection } from './connection.js';
 
 export const enrichmentQueue = new Queue<EnrichmentJob>('enrichment', {
-  connection,
+  connection: queueConnection,
   defaultJobOptions: {
     attempts: 2,
     backoff: { type: 'exponential', delay: 10000 },
@@ -22,7 +19,7 @@ export async function addEnrichmentJob(
 ): Promise<string> {
   const added = await enrichmentQueue.add('enrich', job, {
     priority: priority ?? 5,
-    jobId: `enrich:${job.entityType}:${job.entity}:${job.depth}:${Date.now()}`,
+    jobId: `enrich:${job.entityType}:${job.entity}:${job.depth}:${randomUUID()}`,
   });
   return added.id || '';
 }

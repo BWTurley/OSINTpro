@@ -86,6 +86,11 @@ export class ExportService {
     return JSON.stringify(output, null, 2);
   }
 
+  private csvEscape(value: string): string {
+    const escaped = value.replace(/"/g, '""');
+    return `"${escaped}"`;
+  }
+
   async exportCSV(caseId: string): Promise<string> {
     const data = await this.loadCaseData(caseId);
     const lines: string[] = [];
@@ -95,12 +100,20 @@ export class ExportService {
 
     for (const ce of data.caseRecord.caseEntities) {
       const entityData = ce.entity.data as Record<string, unknown>;
-      const name = String(entityData.name ?? '').replace(/"/g, '""');
-      const value = String(entityData.value ?? '').replace(/"/g, '""');
+      const name = String(entityData.name ?? '');
+      const value = String(entityData.value ?? '');
       const tags = ce.entity.tags.join(';');
 
       lines.push(
-        `"${ce.entity.id}","${ce.entity.entityType}","${name}","${value}",${ce.entity.confidence},"${ce.entity.tlpLevel}","${tags}"`,
+        [
+          this.csvEscape(ce.entity.id),
+          this.csvEscape(ce.entity.entityType),
+          this.csvEscape(name),
+          this.csvEscape(value),
+          String(ce.entity.confidence),
+          this.csvEscape(ce.entity.tlpLevel),
+          this.csvEscape(tags),
+        ].join(','),
       );
     }
 
@@ -109,9 +122,16 @@ export class ExportService {
     lines.push('RelationshipID,SourceEntityID,TargetEntityID,Type,Confidence,Description');
 
     for (const r of data.relationships) {
-      const desc = String(r.description ?? '').replace(/"/g, '""');
+      const desc = String(r.description ?? '');
       lines.push(
-        `"${r.id}","${r.sourceEntityId}","${r.targetEntityId}","${r.relationshipType}",${r.confidence},"${desc}"`,
+        [
+          this.csvEscape(r.id),
+          this.csvEscape(r.sourceEntityId),
+          this.csvEscape(r.targetEntityId),
+          this.csvEscape(r.relationshipType),
+          String(r.confidence),
+          this.csvEscape(desc),
+        ].join(','),
       );
     }
 
