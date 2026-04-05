@@ -1,6 +1,5 @@
 import express from 'express';
 import http from 'http';
-import cors from 'cors';
 import helmet from 'helmet';
 import passport from 'passport';
 import { ApolloServer } from '@apollo/server';
@@ -9,6 +8,8 @@ import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHt
 import { WebSocketServer } from 'ws';
 import { useServer } from 'graphql-ws/lib/use/ws';
 import { makeExecutableSchema } from '@graphql-tools/schema';
+import depthLimit from 'graphql-depth-limit';
+import { doubleCsrf } from 'csrf-csrf';
 import { PrismaClient } from '@prisma/client';
 
 import { config } from './config.js';
@@ -113,6 +114,7 @@ async function main() {
   // Create Apollo Server
   const apollo = new ApolloServer({
     schema,
+    validationRules: [depthLimit(10)],
     plugins: [
       ApolloServerPluginDrainHttpServer({ httpServer }),
       {
@@ -145,27 +147,55 @@ async function main() {
     }),
   );
 
-  app.use(
-    cors({
-      origin: config.CORS_ORIGIN.split(','),
-      credentials: true,
-    }),
-  );
+  app.use((req, res, next) => {
+    const allowedOrigins = config.CORS_ORIGIN.split(',').map((s) => s.trim());
+    const origin = req.headers.origin;
+    if (origin && allowedOrigins.includes(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    }
+    if (req.method === 'OPTIONS') {
+      res.sendStatus(204);
+      return;
+    }
+    next();
+  });
 
   app.use(express.json({ limit: '10mb' }));
   app.use(passport.initialize());
   app.use(createAuthMiddleware(authService));
   app.use(createAuditMiddleware(auditService));
 
+  // CSRF protection for REST API routes (not GraphQL — it uses Bearer tokens)
+  const { generateToken, doubleCsrfProtection } = doubleCsrf({
+    getSecret: () => config.JWT_SECRET,
+    cookieName: '__csrf',
+    cookieOptions: {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: config.NODE_ENV === 'production',
+      path: '/',
+    },
+    getTokenFromRequest: (req) =>
+      (req.headers['x-csrf-token'] as string) ?? '',
+  });
+
+  app.get('/api/csrf-token', (req, res) => {
+    const token = generateToken(req, res);
+    res.json({ csrfToken: token });
+  });
+
   // REST routes (no rate limiting on health)
   app.use('/health', createHealthRouter(prisma, searchService, graphService, storageService));
 
   // Rate limiter on API routes
   const apiLimiter = createRateLimiter();
-  app.use('/auth', apiLimiter, createAuthRouter(authService, auditService));
-  app.use('/files', apiLimiter, createFileRouter(storageService));
-  app.use('/export', apiLimiter, createExportRouter(exportService));
-  app.use('/audit', apiLimiter, createAuditRouter(auditService));
+  app.use('/auth', apiLimiter, doubleCsrfProtection, createAuthRouter(authService, auditService));
+  app.use('/files', apiLimiter, doubleCsrfProtection, createFileRouter(storageService));
+  app.use('/export', apiLimiter, doubleCsrfProtection, createExportRouter(exportService));
+  app.use('/audit', apiLimiter, doubleCsrfProtection, createAuditRouter(auditService));
 
   // GraphQL endpoint
   app.use(

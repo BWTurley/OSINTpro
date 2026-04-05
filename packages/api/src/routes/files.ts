@@ -6,6 +6,14 @@ import { requireAuth } from '../middleware/rbac.js';
 import { createAppError } from '../middleware/errorHandler.js';
 import type { AuthenticatedRequest } from '../middleware/auth.js';
 
+const ALLOWED_EXTENSIONS = new Set([
+  'pdf', 'doc', 'docx', 'xls', 'xlsx', 'csv', 'txt', 'json', 'xml',
+  'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg',
+  'zip', 'gz', 'tar',
+  'eml', 'msg',
+  'stix', 'yara',
+]);
+
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
@@ -28,7 +36,11 @@ export function createFileRouter(storageService: StorageService): Router {
           throw createAppError('No file provided', 400, 'MISSING_FILE');
         }
 
-        const ext = req.file.originalname.split('.').pop() ?? 'bin';
+        const ext = (req.file.originalname.split('.').pop() ?? 'bin').toLowerCase();
+        if (!ALLOWED_EXTENSIONS.has(ext)) {
+          res.status(400).json({ error: `File type .${ext} is not allowed` });
+          return;
+        }
         const key = `uploads/${uuidv4()}.${ext}`;
 
         const result = await storageService.upload(
@@ -69,7 +81,10 @@ export function createFileRouter(storageService: StorageService): Router {
 
         const results = await Promise.all(
           files.map(async (file) => {
-            const ext = file.originalname.split('.').pop() ?? 'bin';
+            const ext = (file.originalname.split('.').pop() ?? 'bin').toLowerCase();
+            if (!ALLOWED_EXTENSIONS.has(ext)) {
+              throw createAppError(`File type .${ext} is not allowed`, 400, 'INVALID_FILE_TYPE');
+            }
             const key = `uploads/${uuidv4()}.${ext}`;
 
             const result = await storageService.upload(

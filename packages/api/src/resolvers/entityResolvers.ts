@@ -3,6 +3,7 @@ import DataLoader from 'dataloader';
 import { EntityService } from '../services/entityService.js';
 import { assertMinimumRole } from '../middleware/rbac.js';
 import { encodeCursor } from '../utils/pagination.js';
+import { pubsub, EVENTS } from './subscriptionResolvers.js';
 import type { CreateEntityInput, UpdateEntityInput } from '../utils/validation.js';
 
 // We define a minimal DataLoader inline since we didn't add the package.
@@ -122,7 +123,9 @@ export const entityResolvers = {
       ctx: GqlContext,
     ) => {
       assertMinimumRole(ctx.user?.role as 'ADMIN' | 'ANALYST' | 'VIEWER' | 'API_USER' | undefined, 'ANALYST');
-      return ctx.entityService.create(args.input, ctx.user?.id);
+      const entity = await ctx.entityService.create(args.input, ctx.user?.id);
+      pubsub.publish(EVENTS.ENTITY_UPDATED, { entityUpdated: entity });
+      return entity;
     },
 
     updateEntity: async (
@@ -131,7 +134,9 @@ export const entityResolvers = {
       ctx: GqlContext,
     ) => {
       assertMinimumRole(ctx.user?.role as 'ADMIN' | 'ANALYST' | 'VIEWER' | 'API_USER' | undefined, 'ANALYST');
-      return ctx.entityService.update(args.id, args.input, ctx.user?.id);
+      const entity = await ctx.entityService.update(args.id, args.input, ctx.user?.id);
+      pubsub.publish(EVENTS.ENTITY_UPDATED, { entityUpdated: entity });
+      return entity;
     },
 
     mergeEntities: async (

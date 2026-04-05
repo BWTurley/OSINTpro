@@ -3,6 +3,7 @@ import { CollectionService } from '../services/collectionService.js';
 import { EntityService } from '../services/entityService.js';
 import { AuditService } from '../services/auditService.js';
 import { assertMinimumRole } from '../middleware/rbac.js';
+import { pubsub, EVENTS } from './subscriptionResolvers.js';
 import type { CreateEntityInput } from '../utils/validation.js';
 
 interface GqlContext {
@@ -74,7 +75,11 @@ export const collectionResolvers = {
         details: { jobId, modules: args.input.modules },
       });
 
-      return ctx.prisma.collectionJob.findUnique({ where: { id: jobId } });
+      const job = await ctx.prisma.collectionJob.findUnique({ where: { id: jobId } });
+      if (job) {
+        pubsub.publish(EVENTS.COLLECTION_JOB_UPDATED, { collectionJobUpdated: job });
+      }
+      return job;
     },
 
     cancelCollection: async (

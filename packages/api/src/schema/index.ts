@@ -5,6 +5,7 @@ import { caseResolvers } from '../resolvers/caseResolvers.js';
 import { collectionResolvers } from '../resolvers/collectionResolvers.js';
 import { searchResolvers } from '../resolvers/searchResolvers.js';
 import { adminResolvers } from '../resolvers/adminResolvers.js';
+import { subscriptionResolvers } from '../resolvers/subscriptionResolvers.js';
 
 // Merge all resolvers into a single object
 function mergeResolvers(
@@ -64,6 +65,7 @@ export const resolvers = mergeResolvers(
   collectionResolvers,
   searchResolvers,
   adminResolvers,
+  subscriptionResolvers,
 );
 
 export { typeDefs };
