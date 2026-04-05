@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { createHash } from 'crypto';
 import { logger } from '../utils/logger.js';
 
@@ -45,7 +45,7 @@ export class AuditService {
           action: entry.action,
           entityType: entry.entityType,
           entityId: entry.entityId,
-          details: entry.details ?? undefined,
+          details: (entry.details ?? undefined) as Prisma.InputJsonValue | undefined,
           sourceIp: entry.sourceIp,
           previousHash: currentHash,
         },

@@ -1,4 +1,4 @@
-import Redis from 'ioredis';
+import { Redis } from 'ioredis';
 import { BaseModule } from '../../base/BaseModule.js';
 import { Normalizer } from '../../base/Normalizer.js';
 import type {
@@ -11,7 +11,7 @@ import type {
 } from '../../base/types.js';
 
 interface UsaSpendingAward {
-  Award ID: string;
+  'Award ID': string;
   'Recipient Name': string;
   'Award Amount': number;
   Description: string;
@@ -55,7 +55,7 @@ export class FederalSpendingModule extends BaseModule {
         const searchResult = await this.makeRequest<{
           results: Array<{
             internal_id: number;
-            Award ID: string;
+            'Award ID': string;
             'Recipient Name': string;
             'Award Amount': number;
             Description: string;

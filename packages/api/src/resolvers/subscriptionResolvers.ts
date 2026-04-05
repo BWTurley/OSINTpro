@@ -11,13 +11,13 @@ export const EVENTS = {
 export const subscriptionResolvers = {
   Subscription: {
     collectionJobUpdated: {
-      subscribe: () => pubsub.asyncIterableIterator([EVENTS.COLLECTION_JOB_UPDATED]),
+      subscribe: () => pubsub.asyncIterator([EVENTS.COLLECTION_JOB_UPDATED]),
     },
     entityUpdated: {
-      subscribe: () => pubsub.asyncIterableIterator([EVENTS.ENTITY_UPDATED]),
+      subscribe: () => pubsub.asyncIterator([EVENTS.ENTITY_UPDATED]),
     },
     alertTriggered: {
-      subscribe: () => pubsub.asyncIterableIterator([EVENTS.ALERT_TRIGGERED]),
+      subscribe: () => pubsub.asyncIterator([EVENTS.ALERT_TRIGGERED]),
     },
   },
 };

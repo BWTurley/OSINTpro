@@ -13,7 +13,8 @@ export function createExportRouter(exportService: ExportService): Router {
     requireAuth,
     async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
       try {
-        const { caseId, format } = req.params;
+        const caseId = req.params.caseId as string;
+        const format = req.params.format as string;
 
         switch (format) {
           case 'json': {

@@ -108,7 +108,8 @@ async function main() {
         };
       },
     },
-    wsServer,
+    // ws types from graphql-ws and @types/ws have minor structural incompatibilities
+    wsServer as Parameters<typeof useServer>[1],
   );
 
   // Create Apollo Server
@@ -198,27 +199,26 @@ async function main() {
   app.use('/audit', apiLimiter, doubleCsrfProtection, createAuditRouter(auditService));
 
   // GraphQL endpoint
-  app.use(
-    '/graphql',
-    apiLimiter,
-    expressMiddleware(apollo, {
-      context: async ({ req }) => {
-        const authReq = req as AuthenticatedRequest;
-        return {
-          user: authReq.user
-            ? { id: authReq.user.id, email: authReq.user.email, role: authReq.user.role }
-            : undefined,
-          prisma,
-          entityService,
-          searchService,
-          graphService,
-          collectionService,
-          auditService,
-          entityLoader: createEntityLoader(prisma),
-        };
-      },
-    }),
-  );
+  // Apollo Server bundles its own @types/express which conflicts with the root installation.
+  // The cast is required at this library boundary.
+  const gqlMiddleware = expressMiddleware(apollo, {
+    context: async ({ req }) => {
+      const authReq = req as unknown as AuthenticatedRequest;
+      return {
+        user: authReq.user
+          ? { id: authReq.user.id, email: authReq.user.email, role: authReq.user.role }
+          : undefined,
+        prisma,
+        entityService,
+        searchService,
+        graphService,
+        collectionService,
+        auditService,
+        entityLoader: createEntityLoader(prisma),
+      };
+    },
+  }) as unknown as import('express').RequestHandler;
+  app.use('/graphql', apiLimiter, gqlMiddleware);
 
   // Catch-all
   app.use(notFoundHandler);

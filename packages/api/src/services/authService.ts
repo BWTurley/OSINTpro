@@ -4,7 +4,7 @@ import passport from 'passport';
 import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt';
 import { Strategy as LocalStrategy } from 'passport-local';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
-import IORedis from 'ioredis';
+import { Redis as IORedis } from 'ioredis';
 import { PrismaClient, Role, User } from '@prisma/client';
 import { config } from '../config.js';
 import { logger } from '../utils/logger.js';
@@ -61,7 +61,7 @@ export class AuthService {
     return jwt.sign(
       { sub: user.id, email: user.email, role: user.role },
       config.JWT_SECRET,
-      { expiresIn: config.JWT_EXPIRES_IN },
+      { expiresIn: config.JWT_EXPIRES_IN } as jwt.SignOptions,
     );
   }
 
@@ -69,7 +69,7 @@ export class AuthService {
     return jwt.sign(
       { sub: user.id, email: user.email, role: user.role, type: 'refresh' },
       config.JWT_REFRESH_SECRET,
-      { expiresIn: config.JWT_REFRESH_EXPIRES_IN },
+      { expiresIn: config.JWT_REFRESH_EXPIRES_IN } as jwt.SignOptions,
     );
   }
 

@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { SearchService } from '../services/searchService.js';
 
 interface GqlContext {
@@ -183,10 +183,10 @@ export const searchResolvers = {
       return ctx.prisma.savedSearch.create({
         data: {
           name: args.name,
-          query: args.query,
+          query: args.query as Prisma.InputJsonValue,
           userId: ctx.user.id,
           alertEnabled: args.alertEnabled ?? false,
-          alertChannels: (args.alertChannels ?? []) as unknown[],
+          alertChannels: (args.alertChannels ?? []) as Prisma.InputJsonValue,
         },
       });
     },

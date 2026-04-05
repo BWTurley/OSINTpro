@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import passport from 'passport';
-import IORedis from 'ioredis';
+import { Redis as IORedis } from 'ioredis';
 import { AuthService } from '../services/authService.js';
 import { AuditService } from '../services/auditService.js';
 import { loginSchema, registerSchema } from '../utils/validation.js';

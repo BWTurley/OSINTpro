@@ -1,5 +1,5 @@
 import { Worker, Job } from 'bullmq';
-import Redis from 'ioredis';
+import { Redis } from 'ioredis';
 import pino from 'pino';
 import type { NormalizedEntity } from '../base/types.js';
 

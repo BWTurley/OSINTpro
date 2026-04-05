@@ -1,4 +1,4 @@
-import Redis from 'ioredis';
+import { Redis } from 'ioredis';
 import pino from 'pino';
 import type { BaseModule } from './base/BaseModule.js';
 
@@ -151,7 +151,7 @@ async function main(): Promise<void> {
   });
 
   redis.on('connect', () => logger.info('Redis connected'));
-  redis.on('error', (err) => logger.error({ error: err.message }, 'Redis error'));
+  redis.on('error', (err: Error) => logger.error({ error: err.message }, 'Redis error'));
 
   // Build module registry
   const moduleRegistry = buildModuleRegistry(redis);

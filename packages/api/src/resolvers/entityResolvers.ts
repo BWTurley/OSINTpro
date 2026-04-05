@@ -1,13 +1,9 @@
 import { PrismaClient } from '@prisma/client';
-import DataLoader from 'dataloader';
 import { EntityService } from '../services/entityService.js';
 import { assertMinimumRole } from '../middleware/rbac.js';
 import { encodeCursor } from '../utils/pagination.js';
 import { pubsub, EVENTS } from './subscriptionResolvers.js';
 import type { CreateEntityInput, UpdateEntityInput } from '../utils/validation.js';
-
-// We define a minimal DataLoader inline since we didn't add the package.
-// In production, install 'dataloader' and import it properly.
 interface GqlContext {
   user?: { id: string; role: string };
   prisma: PrismaClient;

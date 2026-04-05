@@ -1,4 +1,4 @@
-import Redis from 'ioredis';
+import { Redis } from 'ioredis';
 import pino from 'pino';
 import type { RateLimitConfig } from './types.js';
 

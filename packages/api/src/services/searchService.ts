@@ -214,7 +214,7 @@ export class SearchService {
         },
         from: page * size,
         size,
-        sort: [{ _score: 'desc' }, { createdAt: 'desc' }],
+        sort: [{ _score: { order: 'desc' as const } }, { createdAt: { order: 'desc' as const } }],
         aggs: {
           entityTypes: { terms: { field: 'entityType', size: 20 } },
           tlpLevels: { terms: { field: 'tlpLevel', size: 10 } },

@@ -1,6 +1,6 @@
 import { Queue, Worker, Job, QueueEvents } from 'bullmq';
-import { PrismaClient, JobStatus } from '@prisma/client';
-import IORedis from 'ioredis';
+import { Prisma, PrismaClient, JobStatus } from '@prisma/client';
+import { Redis as IORedis } from 'ioredis';
 import { config } from '../config.js';
 import { logger } from '../utils/logger.js';
 
@@ -35,7 +35,7 @@ export class CollectionService {
     this.worker = new Worker(
       'collection',
       async (job: Job<CollectionJobPayload>) => {
-        const { jobId, entityId, modules } = job.data;
+        const { jobId } = job.data;
 
         // Mark as running
         await this.prisma.collectionJob.update({
@@ -58,7 +58,7 @@ export class CollectionService {
             data: {
               status,
               progress: 1,
-              results: results as unknown as Record<string, unknown>[],
+              results: results as unknown as Prisma.InputJsonValue,
               error: error || null,
               completedAt: new Date(),
             },

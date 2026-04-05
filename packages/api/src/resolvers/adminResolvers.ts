@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { GraphService } from '../services/graphService.js';
 import { AuditService } from '../services/auditService.js';
 import { encrypt } from '../utils/crypto.js';
@@ -100,12 +100,12 @@ export const adminResolvers = {
           moduleName: args.input.moduleName,
           encryptedKey,
           enabled: args.input.enabled ?? true,
-          config: args.input.config ?? {},
+          config: (args.input.config ?? {}) as Prisma.InputJsonValue,
         },
         update: {
           encryptedKey,
           enabled: args.input.enabled ?? true,
-          config: args.input.config ?? {},
+          config: (args.input.config ?? {}) as Prisma.InputJsonValue,
         },
       });
 
@@ -138,7 +138,7 @@ export const adminResolvers = {
           name: args.input.name,
           cronExpression: args.input.cronExpression,
           moduleNames: args.input.moduleNames,
-          entityFilter: args.input.entityFilter ?? undefined,
+          entityFilter: (args.input.entityFilter ?? undefined) as Prisma.InputJsonValue | undefined,
           enabled: args.input.enabled ?? true,
         },
       });

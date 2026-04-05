@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { SearchService } from '../services/searchService.js';
 import { GraphService } from '../services/graphService.js';
 import { StorageService } from '../services/storageService.js';
-import IORedis from 'ioredis';
+import { Redis as IORedis } from 'ioredis';
 import { config } from '../config.js';
 
 interface HealthStatus {

@@ -1,5 +1,5 @@
 import { PrismaClient, Case, Entity, Relationship } from '@prisma/client';
-import { logger } from '../utils/logger.js';
+
 
 interface CaseExportData {
   caseRecord: Case & {

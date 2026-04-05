@@ -1,4 +1,4 @@
-import Redis from 'ioredis';
+import { Redis } from 'ioredis';
 import { BaseModule } from '../../base/BaseModule.js';
 import { Normalizer } from '../../base/Normalizer.js';
 import type {

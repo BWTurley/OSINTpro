@@ -1,6 +1,6 @@
 import neo4j, { Driver, Session, Integer } from 'neo4j-driver';
 import { config } from '../config.js';
-import { logger } from '../utils/logger.js';
+
 
 export interface GraphNode {
   id: string;
@@ -176,6 +176,7 @@ export class GraphService {
   }
 
   async shortestPath(sourceId: string, targetId: string, maxDepth: number = 10): Promise<PathSegment | null> {
+    maxDepth = Math.min(Math.max(maxDepth, 1), 10);
     const session = this.getSession();
     try {
       const result = await session.run(
@@ -195,6 +196,7 @@ export class GraphService {
   }
 
   async allPaths(sourceId: string, targetId: string, maxDepth: number = 5): Promise<PathSegment[]> {
+    maxDepth = Math.min(Math.max(maxDepth, 1), 10);
     const session = this.getSession();
     try {
       const result = await session.run(
@@ -210,6 +212,7 @@ export class GraphService {
   }
 
   async entityGraph(entityId: string, depth: number = 2): Promise<GraphData> {
+    depth = Math.min(Math.max(depth, 1), 5);
     const session = this.getSession();
     try {
       const result = await session.run(

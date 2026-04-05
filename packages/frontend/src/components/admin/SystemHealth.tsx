@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Database, HardDrive, Cpu, Activity, Server, Layers } from 'lucide-react';
-import { formatFileSize, formatNumber } from '@/utils/formatters';
+
 import clsx from 'clsx';
 
 interface HealthMetric {

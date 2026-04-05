@@ -1,4 +1,4 @@
-import Redis from 'ioredis';
+import { Redis } from 'ioredis';
 import { promises as dns } from 'node:dns';
 import { Resolver } from 'node:dns/promises';
 import { BaseModule } from '../../base/BaseModule.js';

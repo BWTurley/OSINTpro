@@ -1,5 +1,5 @@
 import { Queue } from 'bullmq';
-import Redis from 'ioredis';
+import { Redis } from 'ioredis';
 import type { AlertJob } from '../base/types.js';
 
 const connection = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
@@ -51,7 +51,7 @@ export async function listScheduledJobs(): Promise<Array<{
   return repeatableJobs.map((rj) => ({
     id: rj.id || '',
     name: rj.name,
-    next: rj.next,
+    next: rj.next ?? 0,
     pattern: rj.pattern || '',
   }));
 }

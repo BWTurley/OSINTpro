@@ -1,5 +1,5 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosError } from 'axios';
-import Redis from 'ioredis';
+import { Redis } from 'ioredis';
 import pino from 'pino';
 import type {
   CollectionResult,

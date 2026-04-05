@@ -1,4 +1,4 @@
-import { PrismaClient, Entity, TLPLevel } from '@prisma/client';
+import { Prisma, PrismaClient, Entity, TLPLevel } from '@prisma/client';
 import { SearchService } from './searchService.js';
 import { GraphService } from './graphService.js';
 import { AuditService } from './auditService.js';
@@ -18,13 +18,13 @@ export class EntityService {
     const entity = await this.prisma.entity.create({
       data: {
         entityType: input.entityType,
-        data: input.data,
+        data: input.data as Prisma.InputJsonValue,
         confidence: input.confidence,
         admiraltySource: input.admiraltySource,
         admiraltyCredibility: input.admiraltyCredibility,
         tlpLevel: input.tlpLevel as TLPLevel,
         tags: input.tags,
-        sources: input.sources,
+        sources: input.sources as Prisma.InputJsonValue,
       },
     });
 
@@ -58,13 +58,13 @@ export class EntityService {
     const entity = await this.prisma.entity.update({
       where: { id },
       data: {
-        ...(input.data !== undefined && { data: input.data }),
+        ...(input.data !== undefined && { data: input.data as Prisma.InputJsonValue }),
         ...(input.confidence !== undefined && { confidence: input.confidence }),
         ...(input.admiraltySource !== undefined && { admiraltySource: input.admiraltySource }),
         ...(input.admiraltyCredibility !== undefined && { admiraltyCredibility: input.admiraltyCredibility }),
         ...(input.tlpLevel !== undefined && { tlpLevel: input.tlpLevel as TLPLevel }),
         ...(input.tags !== undefined && { tags: input.tags }),
-        ...(input.sources !== undefined && { sources: input.sources }),
+        ...(input.sources !== undefined && { sources: input.sources as Prisma.InputJsonValue }),
       },
     });
 
@@ -197,9 +197,9 @@ export class EntityService {
     const merged = await this.prisma.entity.update({
       where: { id: targetId },
       data: {
-        data: mergedData,
+        data: mergedData as Prisma.InputJsonValue,
         tags: mergedTags,
-        sources: mergedSources,
+        sources: mergedSources as Prisma.InputJsonValue,
         confidence: mergedConfidence,
       },
     });

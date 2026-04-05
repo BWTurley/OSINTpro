@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import IORedis from 'ioredis';
+import { Redis as IORedis } from 'ioredis';
 import { config } from '../config.js';
 import { logger } from '../utils/logger.js';
 
