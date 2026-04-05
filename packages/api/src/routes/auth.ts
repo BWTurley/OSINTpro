@@ -1,10 +1,16 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import passport from 'passport';
+import IORedis from 'ioredis';
 import { AuthService } from '../services/authService.js';
 import { AuditService } from '../services/auditService.js';
 import { loginSchema, registerSchema } from '../utils/validation.js';
 import { createAppError } from '../middleware/errorHandler.js';
+import { requireAuth } from '../middleware/rbac.js';
+import { config } from '../config.js';
 import { User } from '@prisma/client';
+import type { AuthenticatedRequest } from '../middleware/auth.js';
+
+const redis = new IORedis(config.REDIS_URL, { maxRetriesPerRequest: null });
 
 export function createAuthRouter(authService: AuthService, auditService: AuditService): Router {
   const router = Router();
@@ -13,7 +19,29 @@ export function createAuthRouter(authService: AuthService, auditService: AuditSe
   router.post('/login', async (req: Request, res: Response, next: NextFunction) => {
     try {
       const input = loginSchema.parse(req.body);
-      const { user, tokens } = await authService.login(input.email, input.password);
+
+      // Account lockout check
+      const attempts = parseInt(await redis.get(`login-attempts:${input.email}`) ?? '0', 10);
+      if (attempts >= 5) {
+        res.status(429).json({ error: 'Account temporarily locked. Try again in 15 minutes.' });
+        return;
+      }
+
+      let user: User;
+      let tokens: { accessToken: string; refreshToken: string; expiresIn: string };
+      try {
+        const result = await authService.login(input.email, input.password);
+        user = result.user;
+        tokens = result.tokens;
+      } catch (loginErr) {
+        // Increment failed attempts
+        await redis.incr(`login-attempts:${input.email}`);
+        await redis.expire(`login-attempts:${input.email}`, 900);
+        throw loginErr;
+      }
+
+      // Clear failed attempts on success
+      await redis.del(`login-attempts:${input.email}`);
 
       await auditService.log({
         userId: user.id,
@@ -93,14 +121,33 @@ export function createAuthRouter(authService: AuthService, auditService: AuditSe
         details: { method: 'google' },
       });
 
-      // Redirect to frontend with tokens as query params
-      const redirectUrl = new URL('/auth/callback', 'http://localhost:3000');
-      redirectUrl.searchParams.set('accessToken', tokens.accessToken);
-      redirectUrl.searchParams.set('refreshToken', tokens.refreshToken);
-
-      res.redirect(redirectUrl.toString());
+      // Set tokens as httpOnly cookies and redirect clean
+      res.cookie('accessToken', tokens.accessToken, {
+        httpOnly: true,
+        secure: config.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 15 * 60 * 1000, // 15 minutes
+        path: '/',
+      });
+      res.cookie('refreshToken', tokens.refreshToken, {
+        httpOnly: true,
+        secure: config.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        path: '/api/auth/refresh',
+      });
+      res.redirect(`${config.FRONTEND_URL}/auth/callback`);
     },
   );
+
+  // POST /auth/logout
+  router.post('/logout', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (token) {
+      await authService.revokeToken(token);
+    }
+    res.json({ message: 'Logged out' });
+  });
 
   return router;
 }

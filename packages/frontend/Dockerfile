@@ -21,13 +21,13 @@ server {
     }
 
     location /api {
-        proxy_pass http://backend:4000;
+        proxy_pass http://api:4000;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
     }
 
     location /graphql {
-        proxy_pass http://backend:4000;
+        proxy_pass http://api:4000;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header Upgrade $http_upgrade;
