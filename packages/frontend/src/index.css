@@ -1,0 +1,153 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-gray-700;
+  }
+
+  body {
+    @apply bg-surface-950 text-gray-100;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  /* Custom scrollbar for dark mode */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-surface-900;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-surface-700 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-surface-300;
+  }
+
+  /* Light mode overrides */
+  .light body,
+  html:not(.dark) body {
+    @apply bg-white text-gray-900;
+  }
+
+  html:not(.dark) ::-webkit-scrollbar-track {
+    @apply bg-gray-100;
+  }
+
+  html:not(.dark) ::-webkit-scrollbar-thumb {
+    @apply bg-gray-400;
+  }
+}
+
+@layer components {
+  /* vis-timeline overrides */
+  .vis-timeline {
+    @apply border-gray-700 bg-surface-900;
+  }
+
+  .dark .vis-timeline .vis-item {
+    @apply bg-surface-800 border-blue-500 text-gray-100;
+  }
+
+  .dark .vis-timeline .vis-item.vis-selected {
+    @apply bg-blue-900 border-blue-400;
+  }
+
+  .dark .vis-timeline .vis-time-axis .vis-text {
+    @apply text-gray-400;
+  }
+
+  .dark .vis-timeline .vis-grid.vis-minor {
+    border-color: rgba(51, 65, 85, 0.5);
+  }
+
+  .dark .vis-timeline .vis-grid.vis-major {
+    border-color: rgba(51, 65, 85, 0.8);
+  }
+
+  /* Leaflet dark mode fixes */
+  .dark .leaflet-container {
+    background: #0f172a;
+  }
+
+  .dark .leaflet-control-zoom a {
+    @apply bg-surface-800 text-gray-100 border-gray-700;
+  }
+
+  .dark .leaflet-control-zoom a:hover {
+    @apply bg-surface-700;
+  }
+
+  .dark .leaflet-popup-content-wrapper {
+    @apply bg-surface-800 text-gray-100 shadow-xl;
+  }
+
+  .dark .leaflet-popup-tip {
+    @apply bg-surface-800;
+  }
+
+  .dark .leaflet-control-layers {
+    @apply bg-surface-800 text-gray-100 border-gray-700;
+  }
+
+  .dark .leaflet-control-attribution {
+    @apply bg-surface-900/80 text-gray-500;
+  }
+
+  /* react-grid-layout overrides */
+  .react-grid-item.react-grid-placeholder {
+    @apply bg-blue-500/20 border-2 border-dashed border-blue-500 rounded-lg;
+  }
+
+  .react-grid-item > .react-resizable-handle::after {
+    @apply border-gray-500;
+  }
+
+  /* Card component utility */
+  .card {
+    @apply bg-surface-900 border border-gray-700/50 rounded-xl p-5 shadow-lg;
+  }
+
+  html:not(.dark) .card {
+    @apply bg-white border-gray-200 shadow-md;
+  }
+
+  /* Badge utility */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+
+  .animate-ticker {
+    animation: ticker 30s linear infinite;
+  }
+
+  @keyframes ticker {
+    0% {
+      transform: translateX(100%);
+    }
+    100% {
+      transform: translateX(-100%);
+    }
+  }
+
+  .animate-pulse-slow {
+    animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+}

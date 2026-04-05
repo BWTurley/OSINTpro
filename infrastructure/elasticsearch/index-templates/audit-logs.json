@@ -1,0 +1,47 @@
+{
+  "index_patterns": ["audit-logs*"],
+  "priority": 100,
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 1
+    },
+    "mappings": {
+      "dynamic": "strict",
+      "properties": {
+        "id": { "type": "keyword" },
+        "timestamp": { "type": "date" },
+        "action": { "type": "keyword" },
+        "category": { "type": "keyword" },
+        "severity": { "type": "keyword" },
+        "user_id": { "type": "keyword" },
+        "user_email": { "type": "keyword" },
+        "user_ip": { "type": "ip" },
+        "user_agent": { "type": "text" },
+        "resource_type": { "type": "keyword" },
+        "resource_id": { "type": "keyword" },
+        "resource_name": { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
+        "investigation_id": { "type": "keyword" },
+        "description": { "type": "text" },
+        "changes": {
+          "type": "nested",
+          "properties": {
+            "field": { "type": "keyword" },
+            "old_value": { "type": "text" },
+            "new_value": { "type": "text" }
+          }
+        },
+        "metadata": {
+          "type": "object",
+          "enabled": true,
+          "dynamic": true
+        },
+        "request_id": { "type": "keyword" },
+        "session_id": { "type": "keyword" },
+        "status": { "type": "keyword" },
+        "error_message": { "type": "text" },
+        "duration_ms": { "type": "integer" }
+      }
+    }
+  }
+}

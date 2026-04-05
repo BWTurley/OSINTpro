@@ -1,0 +1,24 @@
+{
+  "name": "osint-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "description": "OSINT Intelligence Dashboard — entity resolution, link analysis, and threat intelligence",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "docker compose up --build",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "setup": "bash scripts/setup.sh",
+    "seed": "bash scripts/seed.sh",
+    "backup": "bash scripts/backup.sh"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
+  "license": "UNLICENSED"
+}

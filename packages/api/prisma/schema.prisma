@@ -1,0 +1,222 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  ANALYST
+  VIEWER
+  API_USER
+}
+
+enum CaseStatus {
+  OPEN
+  IN_PROGRESS
+  CLOSED
+  ARCHIVED
+}
+
+enum JobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum TLPLevel {
+  WHITE
+  GREEN
+  AMBER
+  AMBER_STRICT
+  RED
+}
+
+model User {
+  id           String    @id @default(uuid()) @db.Uuid
+  email        String    @unique
+  passwordHash String?   @map("password_hash")
+  name         String
+  role         Role      @default(ANALYST)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  lastLogin    DateTime? @map("last_login")
+
+  cases        Case[]
+  notes        Note[]
+  savedSearches SavedSearch[]
+  auditLogs    AuditLog[]
+
+  @@map("users")
+}
+
+model Entity {
+  id                    String   @id @default(uuid()) @db.Uuid
+  entityType            String   @map("entity_type")
+  data                  Json
+  confidence            Float    @default(0)
+  admiraltySource       String?  @map("admiralty_source")
+  admiraltyCredibility  String?  @map("admiralty_credibility")
+  tlpLevel              TLPLevel @default(WHITE) @map("tlp_level")
+  tags                  String[] @default([])
+  sources               Json     @default("[]")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  caseEntities  CaseEntity[]
+  notes         Note[]
+  collectionJobs CollectionJob[]
+
+  @@index([entityType])
+  @@index([createdAt])
+  @@map("entities")
+}
+
+model Relationship {
+  id                    String    @id @default(uuid()) @db.Uuid
+  sourceEntityId        String    @map("source_entity_id") @db.Uuid
+  sourceEntityType      String    @map("source_entity_type")
+  targetEntityId        String    @map("target_entity_id") @db.Uuid
+  targetEntityType      String    @map("target_entity_type")
+  relationshipType      String    @map("relationship_type")
+  confidence            Float     @default(0)
+  admiraltySource       String?   @map("admiralty_source")
+  admiraltyCredibility  String?   @map("admiralty_credibility")
+  source                String?
+  description           String?
+  startDate             DateTime? @map("start_date")
+  endDate               DateTime? @map("end_date")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  @@index([sourceEntityId])
+  @@index([targetEntityId])
+  @@index([relationshipType])
+  @@map("relationships")
+}
+
+model Case {
+  id          String     @id @default(uuid()) @db.Uuid
+  name        String
+  description String?
+  status      CaseStatus @default(OPEN)
+  createdById String     @map("created_by_id") @db.Uuid
+  createdBy   User       @relation(fields: [createdById], references: [id])
+  tlpLevel    TLPLevel   @default(WHITE) @map("tlp_level")
+  tags        String[]   @default([])
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  caseEntities CaseEntity[]
+  notes        Note[]
+
+  @@map("cases")
+}
+
+model CaseEntity {
+  caseId   String   @map("case_id") @db.Uuid
+  entityId String   @map("entity_id") @db.Uuid
+  addedAt  DateTime @default(now()) @map("added_at")
+
+  case   Case   @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  entity Entity @relation(fields: [entityId], references: [id], onDelete: Cascade)
+
+  @@id([caseId, entityId])
+  @@map("case_entities")
+}
+
+model Note {
+  id             String   @id @default(uuid()) @db.Uuid
+  entityId       String   @map("entity_id") @db.Uuid
+  entity         Entity   @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  caseId         String?  @map("case_id") @db.Uuid
+  case           Case?    @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  content        String
+  authorId       String   @map("author_id") @db.Uuid
+  author         User     @relation(fields: [authorId], references: [id])
+  classification String?
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@map("notes")
+}
+
+model AuditLog {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String?  @map("user_id") @db.Uuid
+  user         User?    @relation(fields: [userId], references: [id])
+  action       String
+  entityType   String?  @map("entity_type")
+  entityId     String?  @map("entity_id") @db.Uuid
+  details      Json?
+  sourceIp     String?  @map("source_ip")
+  previousHash String?  @map("previous_hash")
+  timestamp    DateTime @default(now())
+
+  @@index([userId])
+  @@index([timestamp])
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}
+
+model ApiKeyConfig {
+  id           String  @id @default(uuid()) @db.Uuid
+  moduleName   String  @unique @map("module_name")
+  encryptedKey String  @map("encrypted_key")
+  enabled      Boolean @default(true)
+  config       Json    @default("{}")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("api_key_configs")
+}
+
+model CollectionJob {
+  id          String    @id @default(uuid()) @db.Uuid
+  entityId    String    @map("entity_id") @db.Uuid
+  entity      Entity    @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  modules     String[]
+  status      JobStatus @default(PENDING)
+  progress    Float     @default(0)
+  results     Json?
+  error       String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  completedAt DateTime? @map("completed_at")
+
+  @@index([entityId])
+  @@index([status])
+  @@map("collection_jobs")
+}
+
+model ScheduledJob {
+  id             String   @id @default(uuid()) @db.Uuid
+  name           String
+  cronExpression String   @map("cron_expression")
+  moduleNames    String[] @map("module_names")
+  entityFilter   Json?    @map("entity_filter")
+  enabled        Boolean  @default(true)
+  lastRun        DateTime? @map("last_run")
+  nextRun        DateTime? @map("next_run")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@map("scheduled_jobs")
+}
+
+model SavedSearch {
+  id            String  @id @default(uuid()) @db.Uuid
+  name          String
+  query         Json
+  userId        String  @map("user_id") @db.Uuid
+  user          User    @relation(fields: [userId], references: [id])
+  alertEnabled  Boolean @default(false) @map("alert_enabled")
+  alertChannels Json    @default("[]") @map("alert_channels")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@map("saved_searches")
+}

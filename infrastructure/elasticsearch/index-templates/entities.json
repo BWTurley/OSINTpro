@@ -1,0 +1,75 @@
+{
+  "index_patterns": ["entities*"],
+  "priority": 100,
+  "template": {
+    "settings": {
+      "number_of_shards": 2,
+      "number_of_replicas": 1,
+      "analysis": {
+        "analyzer": {
+          "entity_analyzer": {
+            "type": "custom",
+            "tokenizer": "standard",
+            "filter": ["lowercase", "asciifolding", "edge_ngram_filter"]
+          },
+          "exact_analyzer": {
+            "type": "custom",
+            "tokenizer": "keyword",
+            "filter": ["lowercase"]
+          }
+        },
+        "filter": {
+          "edge_ngram_filter": {
+            "type": "edge_ngram",
+            "min_gram": 2,
+            "max_gram": 20
+          }
+        }
+      }
+    },
+    "mappings": {
+      "dynamic": "strict",
+      "properties": {
+        "id": { "type": "keyword" },
+        "type": { "type": "keyword" },
+        "name": {
+          "type": "text",
+          "analyzer": "entity_analyzer",
+          "fields": {
+            "keyword": { "type": "keyword" },
+            "exact": { "type": "text", "analyzer": "exact_analyzer" }
+          }
+        },
+        "description": { "type": "text" },
+        "source": { "type": "keyword" },
+        "confidence": { "type": "float" },
+        "risk_score": { "type": "float" },
+        "tags": { "type": "keyword" },
+        "properties": {
+          "type": "nested",
+          "properties": {
+            "key": { "type": "keyword" },
+            "value": { "type": "text", "fields": { "keyword": { "type": "keyword" } } }
+          }
+        },
+        "aliases": { "type": "keyword" },
+        "location": { "type": "geo_point" },
+        "country_code": { "type": "keyword" },
+        "first_seen": { "type": "date" },
+        "last_seen": { "type": "date" },
+        "created_at": { "type": "date" },
+        "updated_at": { "type": "date" },
+        "created_by": { "type": "keyword" },
+        "investigation_id": { "type": "keyword" },
+        "is_active": { "type": "boolean" },
+        "external_ids": {
+          "type": "nested",
+          "properties": {
+            "source": { "type": "keyword" },
+            "id": { "type": "keyword" }
+          }
+        }
+      }
+    }
+  }
+}

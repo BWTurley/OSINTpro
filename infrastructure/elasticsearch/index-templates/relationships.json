@@ -1,0 +1,49 @@
+{
+  "index_patterns": ["relationships*"],
+  "priority": 100,
+  "template": {
+    "settings": {
+      "number_of_shards": 2,
+      "number_of_replicas": 1
+    },
+    "mappings": {
+      "dynamic": "strict",
+      "properties": {
+        "id": { "type": "keyword" },
+        "type": { "type": "keyword" },
+        "label": { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
+        "source_entity_id": { "type": "keyword" },
+        "source_entity_type": { "type": "keyword" },
+        "target_entity_id": { "type": "keyword" },
+        "target_entity_type": { "type": "keyword" },
+        "direction": { "type": "keyword" },
+        "confidence": { "type": "float" },
+        "weight": { "type": "float" },
+        "source": { "type": "keyword" },
+        "evidence": {
+          "type": "nested",
+          "properties": {
+            "type": { "type": "keyword" },
+            "description": { "type": "text" },
+            "url": { "type": "keyword" },
+            "collected_at": { "type": "date" }
+          }
+        },
+        "properties": {
+          "type": "nested",
+          "properties": {
+            "key": { "type": "keyword" },
+            "value": { "type": "text", "fields": { "keyword": { "type": "keyword" } } }
+          }
+        },
+        "first_seen": { "type": "date" },
+        "last_seen": { "type": "date" },
+        "created_at": { "type": "date" },
+        "updated_at": { "type": "date" },
+        "created_by": { "type": "keyword" },
+        "investigation_id": { "type": "keyword" },
+        "is_active": { "type": "boolean" }
+      }
+    }
+  }
+}
