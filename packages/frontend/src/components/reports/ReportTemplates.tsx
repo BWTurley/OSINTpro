@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileText, Shield, Search, AlertTriangle, FileCode } from 'lucide-react';
+import { Shield, Search, AlertTriangle, FileCode } from 'lucide-react';
 import clsx from 'clsx';
 import type { ReportTemplate } from '@/types';
 

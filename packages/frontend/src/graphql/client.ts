@@ -72,7 +72,7 @@ export const apolloClient = new ApolloClient({
         fields: {
           searchEntities: {
             keyArgs: ['query', 'types', 'sources'],
-            merge(existing, incoming) {
+            merge(_existing, incoming) {
               return incoming;
             },
           },

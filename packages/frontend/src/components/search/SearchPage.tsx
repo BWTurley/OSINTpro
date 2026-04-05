@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Search, Filter, Bookmark } from 'lucide-react';
+import { Search, Filter } from 'lucide-react';
 import { useSearch } from '@/hooks/useSearch';
 import { AdvancedFilters } from './AdvancedFilters';
 import { FacetedResults } from './FacetedResults';
 import { SavedSearches } from './SavedSearches';
 import { EntityDetail } from '@/components/entities/EntityDetail';
 import { Modal } from '@/components/common/Modal';
-import type { Entity, EntityType, TLPLevel } from '@/types';
+import type { EntityType, TLPLevel } from '@/types';
 
 interface FiltersState {
   types: EntityType[];

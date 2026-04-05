@@ -16,7 +16,7 @@ import { CaseExport } from './CaseExport';
 import { CASE_STATUS_CLASSES, CASE_STATUS_LABELS, SEVERITY_BG_CLASSES, ENTITY_BG_CLASSES } from '@/utils/constants';
 import { formatDate, entityTypeLabel } from '@/utils/formatters';
 import clsx from 'clsx';
-import type { Case, Entity, Note } from '@/types';
+import type { Case, Entity } from '@/types';
 
 interface CaseWorkspaceProps {
   caseId: string;

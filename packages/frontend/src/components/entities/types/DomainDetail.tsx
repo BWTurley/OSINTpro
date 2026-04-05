@@ -1,5 +1,5 @@
 import React from 'react';
-import { Globe, Shield, Server, Clock, FileText, AlertTriangle } from 'lucide-react';
+import { Globe, Shield, Clock, FileText, AlertTriangle } from 'lucide-react';
 import type { Entity } from '@/types';
 
 interface DomainMeta {

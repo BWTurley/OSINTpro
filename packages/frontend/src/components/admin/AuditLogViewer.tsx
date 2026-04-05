@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Download, Filter } from 'lucide-react';
+import { Search, Download } from 'lucide-react';
 import { DataTable } from '@/components/common/DataTable';
 import { formatDateTime } from '@/utils/formatters';
 import type { ColumnDef } from '@tanstack/react-table';

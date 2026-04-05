@@ -11,7 +11,7 @@ import { DomainDetail } from './types/DomainDetail';
 import { IPDetail } from './types/IPDetail';
 import { ENTITY_BG_CLASSES } from '@/utils/constants';
 import { entityTypeLabel, formatDateTime, formatRelativeTime } from '@/utils/formatters';
-import { ExternalLink, Tag, Clock, Database } from 'lucide-react';
+import { Tag, Clock, Database } from 'lucide-react';
 import clsx from 'clsx';
 import type { Entity } from '@/types';
 

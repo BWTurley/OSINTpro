@@ -1,5 +1,5 @@
 import React from 'react';
-import { Server, Globe, Shield, MapPin, AlertTriangle, Wifi } from 'lucide-react';
+import { Server, Globe, MapPin, AlertTriangle, Wifi } from 'lucide-react';
 import type { Entity } from '@/types';
 
 interface IPMeta {
