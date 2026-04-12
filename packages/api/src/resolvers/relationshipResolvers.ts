@@ -18,6 +18,7 @@ export const relationshipResolvers = {
       args: { entityId: string },
       ctx: GqlContext,
     ) => {
+      assertMinimumRole(ctx.user?.role as 'ADMIN' | 'ANALYST' | 'VIEWER' | 'API_USER' | undefined, 'VIEWER');
       return ctx.prisma.relationship.findMany({
         where: {
           OR: [
@@ -34,6 +35,7 @@ export const relationshipResolvers = {
       args: { id: string },
       ctx: GqlContext,
     ) => {
+      assertMinimumRole(ctx.user?.role as 'ADMIN' | 'ANALYST' | 'VIEWER' | 'API_USER' | undefined, 'VIEWER');
       return ctx.prisma.relationship.findUnique({ where: { id: args.id } });
     },
 
@@ -42,6 +44,7 @@ export const relationshipResolvers = {
       args: { sourceId: string; targetId: string; maxDepth?: number },
       ctx: GqlContext,
     ) => {
+      assertMinimumRole(ctx.user?.role as 'ADMIN' | 'ANALYST' | 'VIEWER' | 'API_USER' | undefined, 'VIEWER');
       return ctx.graphService.shortestPath(args.sourceId, args.targetId, args.maxDepth ?? 10);
     },
 
@@ -50,6 +53,7 @@ export const relationshipResolvers = {
       args: { entityId: string; depth?: number },
       ctx: GqlContext,
     ) => {
+      assertMinimumRole(ctx.user?.role as 'ADMIN' | 'ANALYST' | 'VIEWER' | 'API_USER' | undefined, 'VIEWER');
       return ctx.graphService.entityGraph(args.entityId, args.depth ?? 2);
     },
   },

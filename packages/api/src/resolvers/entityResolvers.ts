@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { EntityService } from '../services/entityService.js';
-import { assertMinimumRole } from '../middleware/rbac.js';
+import { assertMinimumRole, assertTlpAccess } from '../middleware/rbac.js';
 import { encodeCursor } from '../utils/pagination.js';
 import { pubsub, EVENTS } from './subscriptionResolvers.js';
 import type { CreateEntityInput, UpdateEntityInput } from '../utils/validation.js';
@@ -75,7 +75,12 @@ export const entityResolvers = {
       args: { id: string },
       ctx: GqlContext,
     ) => {
-      return ctx.entityService.findById(args.id);
+      assertMinimumRole(ctx.user?.role as 'ADMIN' | 'ANALYST' | 'VIEWER' | 'API_USER' | undefined, 'VIEWER');
+      const entity = await ctx.entityService.findById(args.id);
+      if (entity) {
+        assertTlpAccess(ctx.user?.role as 'ADMIN' | 'ANALYST' | 'VIEWER' | 'API_USER' | undefined, entity.tlpLevel);
+      }
+      return entity;
     },
 
     entities: async (
@@ -83,6 +88,7 @@ export const entityResolvers = {
       args: { filter?: { entityType?: string; tags?: string[]; tlpLevel?: string; first?: number; after?: string } },
       ctx: GqlContext,
     ) => {
+      assertMinimumRole(ctx.user?.role as 'ADMIN' | 'ANALYST' | 'VIEWER' | 'API_USER' | undefined, 'VIEWER');
       const filter = args.filter ?? {};
       const first = filter.first ?? 25;
       const { entities, total } = await ctx.entityService.findMany({

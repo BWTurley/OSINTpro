@@ -96,6 +96,9 @@ export class AuthService {
   async refreshTokens(refreshToken: string): Promise<AuthTokens> {
     const payload = this.verifyRefreshToken(refreshToken);
 
+    // Revoke the old refresh token to prevent reuse
+    await this.revokeToken(refreshToken);
+
     const user = await this.prisma.user.findUnique({ where: { id: payload.sub } });
     if (!user) {
       throw new Error('User not found');
@@ -113,7 +116,7 @@ export class AuthService {
     const passwordHash = await this.hashPassword(password);
 
     return this.prisma.user.create({
-      data: { email, passwordHash, name, role: Role.ANALYST },
+      data: { email, passwordHash, name, role: Role.VIEWER },
     });
   }
 
@@ -154,7 +157,7 @@ export class AuthService {
         data: {
           email,
           name: profile.displayName,
-          role: Role.ANALYST,
+          role: Role.VIEWER,
         },
       });
       logger.info({ userId: user.id, email }, 'Created user from Google OAuth');

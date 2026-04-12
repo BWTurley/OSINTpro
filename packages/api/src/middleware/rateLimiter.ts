@@ -68,9 +68,10 @@ export function createRateLimiter(options?: Partial<RateLimitOptions>) {
 
       next();
     } catch (err) {
-      // If Redis is down, allow the request through (fail open)
-      logger.warn({ err }, 'Rate limiter Redis error, allowing request');
-      next();
+      // Fail closed — reject requests when rate limiting is unavailable
+      logger.error({ err }, 'Rate limiter Redis error, rejecting request');
+      res.status(503).json({ error: 'Service temporarily unavailable' });
+      return;
     }
   };
 }

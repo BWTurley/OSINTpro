@@ -29,10 +29,10 @@ const envSchema = z.object({
   MINIO_BUCKET: z.string().default('osint-files'),
   MINIO_USE_SSL: z.coerce.boolean().default(false),
 
-  // JWT
-  JWT_SECRET: z.string().default('change-me-in-production'),
+  // JWT — no defaults; must be set in all environments
+  JWT_SECRET: z.string().min(32),
   JWT_EXPIRES_IN: z.string().default('15m'),
-  JWT_REFRESH_SECRET: z.string().default('change-me-refresh-in-production'),
+  JWT_REFRESH_SECRET: z.string().min(32),
   JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
 
   // OAuth
@@ -40,8 +40,8 @@ const envSchema = z.object({
   GOOGLE_CLIENT_SECRET: z.string().default(''),
   GOOGLE_CALLBACK_URL: z.string().default('http://localhost:4000/auth/google/callback'),
 
-  // Encryption
-  ENCRYPTION_KEY: z.string().min(32).default('a]3Fk9$mPq!Lx7Nw@2Rv&Yz^Jb8Ht5Ue'),
+  // Encryption — no default; generate with `openssl rand -hex 32`
+  ENCRYPTION_KEY: z.string().min(32),
 
   // Rate limiting
   RATE_LIMIT_WINDOW_MS: z.coerce.number().default(60000),
@@ -73,9 +73,6 @@ export const config = loadConfig();
 
 if (config.NODE_ENV === 'production') {
   const errors: string[] = [];
-  if (config.JWT_SECRET.includes('change-me')) errors.push('JWT_SECRET must be changed for production');
-  if (config.JWT_REFRESH_SECRET.includes('change-me')) errors.push('JWT_REFRESH_SECRET must be changed for production');
-  if (config.ENCRYPTION_KEY === 'a]3Fk9$mPq!Lx7Nw@2Rv&Yz^Jb8Ht5Ue') errors.push('ENCRYPTION_KEY must be changed for production');
   if (config.MINIO_ACCESS_KEY === 'minioadmin') errors.push('MINIO_ACCESS_KEY must be changed for production');
   if (config.MINIO_SECRET_KEY === 'minioadmin') errors.push('MINIO_SECRET_KEY must be changed for production');
   if (errors.length > 0) {

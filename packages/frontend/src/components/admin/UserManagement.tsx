@@ -37,11 +37,15 @@ export const UserManagement: React.FC = () => {
   const handleCreateUser = async () => {
     if (!newName.trim() || !newEmail.trim()) return;
     try {
-      await fetch('/api/auth/register', {
+      const tempPassword = crypto.randomUUID().slice(0, 16) + '!A1';
+      const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: authHeaders(),
-        body: JSON.stringify({ name: newName, email: newEmail, password: 'changeme123!' }),
+        body: JSON.stringify({ name: newName, email: newEmail, password: tempPassword, role: newRole }),
       });
+      if (res.ok) {
+        alert(`User created. Temporary password:\n\n${tempPassword}\n\nShare this securely — the user should change it on first login.`);
+      }
       setShowCreate(false);
       setNewName('');
       setNewEmail('');

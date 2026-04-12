@@ -28,7 +28,8 @@ export function createAuthMiddleware(authService: AuthService) {
 
       const isRevoked = await authService.isTokenRevoked(token);
       if (isRevoked) {
-        return next();
+        res.status(401).json({ error: 'Token has been revoked' });
+        return;
       }
 
       // Attach a lightweight user object. Full user is loaded by resolvers when needed.
@@ -46,8 +47,8 @@ export function createAuthMiddleware(authService: AuthService) {
       next();
     } catch (err) {
       logger.debug({ err }, 'Invalid JWT token');
-      // Don't reject -- let downstream decide if auth is required
-      next();
+      res.status(401).json({ error: 'Invalid or expired token' });
+      return;
     }
   };
 }

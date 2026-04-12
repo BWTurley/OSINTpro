@@ -72,3 +72,19 @@ export function assertMinimumRole(userRole: Role | undefined, minimumRole: Role)
     throw new Error('Insufficient permissions');
   }
 }
+
+// TLP access control — RED requires ADMIN, AMBER/AMBER_STRICT requires ANALYST+
+const TLP_MINIMUM_ROLE: Record<string, Role> = {
+  RED: Role.ADMIN,
+  AMBER_STRICT: Role.ANALYST,
+  AMBER: Role.ANALYST,
+  GREEN: Role.VIEWER,
+  WHITE: Role.VIEWER,
+};
+
+export function assertTlpAccess(userRole: Role | undefined, tlpLevel: string): void {
+  const requiredRole = TLP_MINIMUM_ROLE[tlpLevel];
+  if (requiredRole) {
+    assertMinimumRole(userRole, requiredRole);
+  }
+}

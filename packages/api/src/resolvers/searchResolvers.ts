@@ -1,5 +1,6 @@
 import { Prisma, PrismaClient } from '@prisma/client';
 import { SearchService } from '../services/searchService.js';
+import { assertMinimumRole } from '../middleware/rbac.js';
 
 interface GqlContext {
   user?: { id: string; role: string };
@@ -25,6 +26,7 @@ export const searchResolvers = {
       },
       ctx: GqlContext,
     ) => {
+      assertMinimumRole(ctx.user?.role as 'ADMIN' | 'ANALYST' | 'VIEWER' | 'API_USER' | undefined, 'VIEWER');
       return ctx.searchService.search({
         query: args.input.query,
         entityTypes: args.input.entityTypes,
@@ -61,6 +63,7 @@ export const searchResolvers = {
       args: { prefix: string; size?: number },
       ctx: GqlContext,
     ) => {
+      assertMinimumRole(ctx.user?.role as 'ADMIN' | 'ANALYST' | 'VIEWER' | 'API_USER' | undefined, 'VIEWER');
       return ctx.searchService.suggest(args.prefix, args.size ?? 5);
     },
 
@@ -69,6 +72,7 @@ export const searchResolvers = {
       _args: unknown,
       ctx: GqlContext,
     ) => {
+      assertMinimumRole(ctx.user?.role as 'ADMIN' | 'ANALYST' | 'VIEWER' | 'API_USER' | undefined, 'VIEWER');
       const [
         totalEntities,
         totalRelationships,
@@ -121,6 +125,7 @@ export const searchResolvers = {
       args: { limit?: number; tlpLevel?: string },
       ctx: GqlContext,
     ) => {
+      assertMinimumRole(ctx.user?.role as 'ADMIN' | 'ANALYST' | 'VIEWER' | 'API_USER' | undefined, 'VIEWER');
       const where: Record<string, unknown> = {
         entityType: { in: ['IP_ADDRESS', 'DOMAIN', 'EMAIL'] },
         confidence: { gte: 0.5 },
