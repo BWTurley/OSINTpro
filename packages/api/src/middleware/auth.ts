@@ -8,7 +8,7 @@ export interface AuthenticatedRequest extends Request {
 }
 
 export function createAuthMiddleware(authService: AuthService) {
-  return async (req: AuthenticatedRequest, _res: Response, next: NextFunction): Promise<void> => {
+  return async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     const authHeader = req.headers.authorization;
 
     if (!authHeader) {
